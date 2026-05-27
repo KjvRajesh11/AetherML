@@ -1,0 +1,4164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherML | Advanced Data Mapping & ML Lab</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for Loss/Accuracy curves -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-deep: #09090b; /* Zinc 950 */
+            --bg-card: #09090b;
+            --bg-card-hover: #18181b; /* Zinc 900 */
+            --border-color: #27272a; /* Zinc 800 */
+            --border-hover: #3f3f46; /* Zinc 700 */
+            --text-main: #fafafa; /* Zinc 50 */
+            --text-muted: #a1a1aa; /* Zinc 400 */
+            
+            --class-a: #a78bfa; /* Pastel Violet */
+            --class-b: #22d3ee; /* Pastel Cyan */
+            --class-c: #fbbf24; /* Pastel Amber */
+            
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            letter-spacing: -0.01em;
+        }
+
+        /* Minimal Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        header {
+            background: var(--bg-deep);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            color: var(--text-main);
+            font-size: 1rem;
+        }
+
+        /* Task Selector Toggle segment */
+        .task-selector {
+            display: flex;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .task-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.35rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.1s;
+        }
+
+        .task-btn:hover {
+            color: var(--text-main);
+        }
+
+        .task-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .status-badge {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+
+        .status-dot.active {
+            background-color: var(--accent-green);
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 340px 1fr 340px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            flex-grow: 1;
+            max-width: 1550px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* When comparison mode is active, center area needs a wider span */
+        .app-container.compare-mode {
+            grid-template-columns: 320px 1fr;
+        }
+
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Minimalist Panels */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .glass-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .card-title-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+        }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.45rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.1s, border-color 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+        }
+
+        .btn-active {
+            background: #ffffff !important;
+            border-color: #ffffff !important;
+            color: #000000 !important;
+            font-weight: 600;
+            box-shadow: none;
+        }
+
+        /* Color selector buttons (only for classification) */
+        .color-presets-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-class-a { border-color: var(--class-a); color: var(--class-a); }
+        .btn-class-a.active { background: var(--class-a); color: #ffffff; }
+        .btn-class-a:hover { background: rgba(167, 139, 250, 0.1); }
+        
+        .btn-class-b { border-color: var(--class-b); color: var(--class-b); }
+        .btn-class-b.active { background: var(--class-b); color: #ffffff; }
+        .btn-class-b:hover { background: rgba(34, 211, 238, 0.1); }
+        
+        .btn-class-c { border-color: var(--class-c); color: var(--class-c); }
+        .btn-class-c.active { background: var(--class-c); color: #ffffff; }
+        .btn-class-c:hover { background: rgba(251, 191, 36, 0.1); }
+
+        /* Continuous Paint/Gradient for Regression */
+        .regression-paint-wrapper {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .gradient-preview {
+            height: 10px;
+            background: linear-gradient(to right, #4f46e5, #fafafa, #e11d48); /* Blue to White to Red */
+            border-radius: 3px;
+            margin: 0.5rem 0;
+        }
+
+        /* Minimalist Sliders */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.45rem 0.65rem;
+            border-radius: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .feature-item:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+
+        .feature-item input {
+            accent-color: #ffffff;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .feature-item label {
+            font-size: 0.82rem;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            flex-grow: 1;
+            color: var(--text-muted);
+        }
+        
+        .feature-item input:checked + label {
+            color: var(--text-main);
+        }
+
+        /* Workspace: Canvases */
+        .workspace-center {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Visual view controllers */
+        .view-controller {
+            display: flex;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.35rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.1s;
+        }
+
+        .view-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .single-canvas-view {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            width: 100%;
+        }
+
+        #mlCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .canvas-toolbar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            padding: 0.3rem;
+            border-radius: 6px;
+            display: flex;
+            gap: 0.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .canvas-toolbar button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+
+        .canvas-toolbar button:hover {
+            color: var(--text-main);
+            background: var(--bg-card-hover);
+        }
+
+        .canvas-toolbar button.active {
+            color: #000000;
+            background: #ffffff;
+        }
+
+        /* 3-Model Comparison view row */
+        .comparison-view-container {
+            display: none;
+            width: 100%;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .compare-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .compare-header-select {
+            margin-bottom: 0.75rem;
+            width: 100%;
+        }
+
+        .compare-canvas-box {
+            position: relative;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            width: 100%;
+            aspect-ratio: 1;
+        }
+
+        .compare-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .compare-stats {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .compare-stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .compare-stat-row span:last-child {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Action Buttons Area */
+        .action-bar {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .btn-train {
+            flex-grow: 1;
+            padding: 0.65rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 6px;
+            background: #ffffff;
+            border: 1px solid #ffffff;
+            color: #000000;
+        }
+        
+        .btn-train:hover {
+            background: #e4e4e7;
+            border-color: #e4e4e7;
+        }
+
+        /* Right Sidebar */
+        .model-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        select {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.45rem 0.65rem;
+            border-radius: 6px;
+            outline: none;
+            width: 100%;
+            cursor: pointer;
+            font-size: 0.82rem;
+        }
+
+        .nn-layers-config {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .layer-node-count {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 36px;
+            text-align: center;
+            padding: 0.3rem 0;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        #nnVisualizerCanvas {
+            width: 100%;
+            height: 140px;
+            background: var(--bg-deep);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+
+        /* Bottom Tabbed area */
+        .bottom-tabs-card {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.25rem;
+            gap: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.65rem 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+            border-bottom-color: #ffffff;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 240px;
+        }
+
+        /* CSV Upload Layout Dropzone */
+        .csv-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .csv-drop-zone {
+            border: 1.5px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .csv-drop-zone:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+
+        .csv-drop-zone i {
+            font-size: 1.75rem;
+            color: var(--text-muted);
+        }
+
+        .csv-meta-info {
+            font-size: 0.8rem;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .column-mapper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        /* Session Manager style */
+        .session-save-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .session-save-input-group input {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            padding: 0.45rem;
+            flex-grow: 1;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .session-save-input-group input:focus {
+            border-color: var(--border-hover);
+        }
+
+        .sessions-list-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        /* Stats Panel */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.45rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .stat-lbl {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.15rem;
+        }
+
+        .code-container {
+            position: relative;
+            background: var(--bg-deep);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: var(--bg-card-hover);
+            padding: 0.45rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-lang {
+            font-size: 0.72rem;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+
+        pre {
+            margin: 0;
+            padding: 1rem;
+            overflow-x: auto;
+            max-height: 350px;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #e4e4e7;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-microchip"></i>
+            <span>AetherML</span> Lab
+        </div>
+        
+        <!-- Task Selector (Classification vs Regression vs Clustering) -->
+        <div class="task-selector">
+            <button class="task-btn active" id="taskClass" onclick="changeTask('classification')">Classification</button>
+            <button class="task-btn" id="taskReg" onclick="changeTask('regression')">Regression</button>
+            <button class="task-btn" id="taskClust" onclick="changeTask('clustering')">Clustering</button>
+        </div>
+
+        <div class="status-badge">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusText">Engine Idle</span>
+        </div>
+    </header>
+
+    <div class="app-container" id="appMainContainer">
+
+        <!-- Left Sidebar: Session persistence & data generators -->
+        <div class="controls-sidebar">
+            
+            <!-- LocalStorage Session Card -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <div class="card-title-left">
+                        <i class="fa-solid fa-bookmark"></i> Session Manager
+                    </div>
+                </div>
+                
+                <div class="session-save-input-group">
+                    <input type="text" id="sessionNameInput" placeholder="Session nickname...">
+                    <button class="btn btn-active" onclick="saveSession()">Save</button>
+                </div>
+                
+                <div class="sessions-list-wrapper" id="sessionsList">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">No saved sessions yet</div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-title">
+                    <div class="card-title-left">
+                        <i class="fa-solid fa-database"></i> Datasets & Noise
+                    </div>
+                </div>
+                
+                <!-- Classification Datasets (Conditional display) -->
+                <div class="control-group" id="classDatasetsGroup">
+                    <div class="control-label">Classification Presets</div>
+                    <div class="presets-grid">
+                        <button class="btn btn-active" id="presetClassSpiral" onclick="generatePreset('spiral')">Spiral</button>
+                        <button class="btn" id="presetClassRings" onclick="generatePreset('rings')">Rings</button>
+                        <button class="btn" id="presetClassMoons" onclick="generatePreset('moons')">Moons</button>
+                        <button class="btn" id="presetClassClusters" onclick="generatePreset('clusters')">Clusters</button>
+                    </div>
+                </div>
+
+                <!-- Regression Datasets (Conditional display) -->
+                <div class="control-group" id="regDatasetsGroup" style="display: none;">
+                    <div class="control-label">Regression Presets</div>
+                    <div class="presets-grid">
+                        <button class="btn btn-active" id="presetRegSine" onclick="generatePreset('sine')">Sine Wave</button>
+                        <button class="btn" id="presetRegLinear" onclick="generatePreset('linear_trend')">Linear</button>
+                        <button class="btn" id="presetRegQuadratic" onclick="generatePreset('quadratic')">Quadratic</button>
+                        <button class="btn" id="presetRegClusters" onclick="generatePreset('regression_clusters')">Clusters</button>
+                    </div>
+                </div>
+
+                <!-- Clustering Datasets (Conditional display) -->
+                <div class="control-group" id="clustDatasetsGroup" style="display: none;">
+                    <div class="control-label">Clustering Presets</div>
+                    <div class="presets-grid">
+                        <button class="btn btn-active" id="presetClustGaussian" onclick="generatePreset('clusters')">3 Gaussian</button>
+                        <button class="btn" id="presetClustRings" onclick="generatePreset('rings')">Rings</button>
+                        <button class="btn" id="presetClustMoons" onclick="generatePreset('moons')">Moons</button>
+                        <button class="btn" id="presetClustSpiral" onclick="generatePreset('spiral')">Spiral</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Data Noise</span>
+                        <span id="noiseVal">10%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="noiseSlider" min="0" max="50" value="10" oninput="updateNoise(this.value)">
+                    </div>
+                </div>
+
+                <div class="control-group" id="splitSliderGroup">
+                    <div class="control-label">
+                        <span>Train / Test Split</span>
+                        <span id="splitVal">80/20</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="splitSlider" min="10" max="90" value="80" oninput="updateSplit(this.value)">
+                    </div>
+                </div>
+
+                <!-- Class selectors (Classification only) -->
+                <div class="color-presets-wrapper" id="classSelectorRow">
+                    <button class="btn btn-class-a active" onclick="setSelectedClass(0)" id="classASelector">
+                        <i class="fa-solid fa-circle"></i> Class A
+                    </button>
+                    <button class="btn btn-class-b" onclick="setSelectedClass(1)" id="classBSelector">
+                        <i class="fa-solid fa-circle"></i> Class B
+                    </button>
+                    <button class="btn btn-class-c" onclick="setSelectedClass(2)" id="classCSelector">
+                        <i class="fa-solid fa-circle"></i> Class C
+                    </button>
+                </div>
+
+                <!-- Regression continuous value paint slider -->
+                <div class="regression-paint-wrapper" id="regPaintRow" style="display: none;">
+                    <div class="control-label">
+                        <span>Paint Target Value (Y)</span>
+                        <span id="paintYVal">0.00</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="paintYSlider" min="-100" max="100" value="0" oninput="updatePaintY(this.value)">
+                    </div>
+                    <div class="gradient-preview"></div>
+                </div>
+            </div>
+
+            <!-- Feature Engineering (Mapped features) -->
+            <div class="glass-card" id="featureEngineeringCard">
+                <div class="card-title">
+                    <div class="card-title-left">
+                        <i class="fa-solid fa-square-root-variable"></i> Feature Engineering
+                    </div>
+                </div>
+                <div class="features-list">
+                    <div class="feature-item" onclick="toggleFeature('x1')">
+                        <input type="checkbox" id="feat_x1" checked disabled>
+                        <label for="feat_x1">X₁</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('x2')">
+                        <input type="checkbox" id="feat_x2" checked disabled>
+                        <label for="feat_x2">X₂</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('x1_sq')">
+                        <input type="checkbox" id="feat_x1_sq">
+                        <label for="feat_x1_sq">X₁²</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('x2_sq')">
+                        <input type="checkbox" id="feat_x2_sq">
+                        <label for="feat_x2_sq">X₂²</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('x1_x2')">
+                        <input type="checkbox" id="feat_x1_x2">
+                        <label for="feat_x1_x2">X₁X₂</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('sin_x1')">
+                        <input type="checkbox" id="feat_sin_x1">
+                        <label for="feat_sin_x1">sin(X₁)</label>
+                    </div>
+                    <div class="feature-item" onclick="toggleFeature('sin_x2')">
+                        <input type="checkbox" id="feat_sin_x2">
+                        <label for="feat_sin_x2">sin(X₂)</label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Center Workspace -->
+        <div class="workspace-center">
+            
+            <!-- View toggler: Single vs Compare 3 Models -->
+            <div class="view-controller">
+                <button class="view-btn active" id="viewSingleBtn" onclick="switchView('single')">Single View</button>
+                <button class="view-btn" id="viewCompareBtn" onclick="switchView('compare')">Comparison View (3 Models)</button>
+            </div>
+
+            <!-- Single view content wrapper -->
+            <div class="single-canvas-view" id="singleCanvasArea">
+                <div class="canvas-container">
+                    <canvas id="mlCanvas" width="500" height="500"></canvas>
+                    <div class="canvas-toolbar">
+                        <button class="active" id="toolAdd" onclick="setDrawingTool('add')" title="Add Point">
+                            <i class="fa-solid fa-pen-fancy"></i>
+                        </button>
+                        <button id="toolBrush" onclick="setDrawingTool('brush')" title="Paint Brush">
+                            <i class="fa-solid fa-paintbrush"></i>
+                        </button>
+                        <button id="toolErase" onclick="setDrawingTool('erase')" title="Eraser">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                        <button onclick="clearCanvas()" title="Clear Canvas">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison View content wrapper -->
+            <div class="comparison-view-container" id="compareCanvasArea">
+                
+                <!-- Column A -->
+                <div class="compare-column">
+                    <select class="compare-header-select" id="modelSelectA" onchange="onCompareModelChange('A', this.value)">
+                        <option value="neural_net">Neural Network</option>
+                        <option value="svm" selected>SVM</option>
+                        <option value="decision_tree">Decision Tree</option>
+                        <option value="knn">K-Nearest Neighbors</option>
+                        <option value="logistic_regression">Linear/Ridge Regressor</option>
+                    </select>
+                    <div class="compare-canvas-box">
+                        <canvas class="compare-canvas" id="canvasCompareA" width="250" height="250"></canvas>
+                    </div>
+                    <div class="compare-stats">
+                        <div class="compare-stat-row"><span>Epoch:</span><span id="compEpochA">0</span></div>
+                        <div class="compare-stat-row"><span id="compLossLabelA">Train Loss:</span><span id="compLossA">0.000</span></div>
+                        <div class="compare-stat-row"><span id="compAccLabelA">Test Acc:</span><span id="compAccA">0.0%</span></div>
+                    </div>
+                </div>
+
+                <!-- Column B -->
+                <div class="compare-column">
+                    <select class="compare-header-select" id="modelSelectB" onchange="onCompareModelChange('B', this.value)">
+                        <option value="neural_net" selected>Neural Network</option>
+                        <option value="svm">SVM</option>
+                        <option value="decision_tree">Decision Tree</option>
+                        <option value="knn">K-Nearest Neighbors</option>
+                        <option value="logistic_regression">Linear/Ridge Regressor</option>
+                    </select>
+                    <div class="compare-canvas-box">
+                        <canvas class="compare-canvas" id="canvasCompareB" width="250" height="250"></canvas>
+                    </div>
+                    <div class="compare-stats">
+                        <div class="compare-stat-row"><span>Epoch:</span><span id="compEpochB">0</span></div>
+                        <div class="compare-stat-row"><span id="compLossLabelB">Train Loss:</span><span id="compLossB">0.000</span></div>
+                        <div class="compare-stat-row"><span id="compAccLabelB">Test Acc:</span><span id="compAccB">0.0%</span></div>
+                    </div>
+                </div>
+
+                <!-- Column C -->
+                <div class="compare-column">
+                    <select class="compare-header-select" id="modelSelectC" onchange="onCompareModelChange('C', this.value)">
+                        <option value="neural_net">Neural Network</option>
+                        <option value="svm">SVM</option>
+                        <option value="decision_tree" selected>Decision Tree</option>
+                        <option value="knn">K-Nearest Neighbors</option>
+                        <option value="logistic_regression">Linear/Ridge Regressor</option>
+                    </select>
+                    <div class="compare-canvas-box">
+                        <canvas class="compare-canvas" id="canvasCompareC" width="250" height="250"></canvas>
+                    </div>
+                    <div class="compare-stats">
+                        <div class="compare-stat-row"><span>Epoch:</span><span id="compEpochC">0</span></div>
+                        <div class="compare-stat-row"><span id="compLossLabelC">Train Loss:</span><span id="compLossC">0.000</span></div>
+                        <div class="compare-stat-row"><span id="compAccLabelC">Test Acc:</span><span id="compAccC">0.0%</span></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Unified Action Buttons -->
+            <div class="action-bar">
+                <button id="btnTrain" class="btn btn-active btn-train" onclick="toggleTraining()">
+                    <i class="fa-solid fa-play"></i> Train Models
+                </button>
+                <button class="btn" onclick="triggerPredictInput()" title="Test Custom Coordinates">
+                    <i class="fa-solid fa-crosshairs"></i> Predict
+                </button>
+            </div>
+
+            <!-- Stats strip -->
+            <div class="stats-strip" style="width: 100%; max-width: 500px;">
+                <div class="stat-item">
+                    <div id="statEpoch" class="stat-val">0</div>
+                    <div class="stat-lbl">Epoch</div>
+                </div>
+                <div class="stat-item">
+                    <div id="statTrainLoss" class="stat-val">0.00</div>
+                    <div class="stat-lbl" id="lblTrainLoss">Train Loss</div>
+                </div>
+                <div class="stat-item">
+                    <div id="statTestAcc" class="stat-val">0.0%</div>
+                    <div class="stat-lbl" id="lblTestMetric">Test Acc</div>
+                </div>
+                <div class="stat-item">
+                    <div id="statPoints" class="stat-val">0</div>
+                    <div class="stat-lbl">Points</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Sidebar: Configuration options for single model view -->
+        <div class="model-sidebar" id="singleModelSidebar">
+            
+            <div class="glass-card">
+                <div class="card-title">
+                    <div class="card-title-left">
+                        <i class="fa-solid fa-sliders"></i> Model Hyperparameters
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">Active Model</div>
+                    <select id="modelSelect" onchange="onModelChange(this.value)">
+                        <option value="neural_net">Neural Network (MLP)</option>
+                        <option value="svm">Support Vector Machine (SVM)</option>
+                        <option value="decision_tree">Decision Tree</option>
+                        <option value="knn">K-Nearest Neighbors (KNN)</option>
+                        <option value="logistic_regression" id="optLogisticRegression">Logistic Regression</option>
+                    </select>
+                </div>
+
+                <!-- Neural Net Controls -->
+                <div id="configNeuralNet">
+                    <div class="control-group">
+                        <div class="control-label">Hidden Layers</div>
+                        <div class="nn-layers-config">
+                            <button class="btn" onclick="modifyHiddenLayers(-1)"><i class="fa-solid fa-minus"></i></button>
+                            <span id="hiddenLayersCount" style="font-weight: bold; width: 30px; text-align: center;">2</span>
+                            <button class="btn" onclick="modifyHiddenLayers(1)"><i class="fa-solid fa-plus"></i></button>
+                            
+                            <div id="hiddenLayersStructure" style="display: flex; gap: 4px; margin-left: 10px;">
+                                <input class="layer-node-count" id="layerNode_0" type="text" value="8" onchange="onLayerNodesChange(0, this.value)">
+                                <input class="layer-node-count" id="layerNode_1" type="text" value="4" onchange="onLayerNodesChange(1, this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group" id="nnActivationGroup">
+                        <div class="control-label">Activation Function</div>
+                        <select id="nnActivation" onchange="onParameterTweak()">
+                            <option value="tanh">Tanh</option>
+                            <option value="relu">ReLU</option>
+                            <option value="sigmoid">Sigmoid</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Learning Rate</span>
+                            <span id="val_nnLR">0.03</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="nnLR" min="1" max="100" value="30" oninput="updateHyperVal('nnLR', this.value / 1000)">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>L2 Regularization</span>
+                            <span id="val_nnL2">0.001</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="nnL2" min="0" max="100" value="10" oninput="updateHyperVal('nnL2', this.value / 10000)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SVM Controls -->
+                <div id="configSVM" style="display: none;">
+                    <div class="control-group">
+                        <div class="control-label">Kernel Type</div>
+                        <select id="svmKernel" onchange="onParameterTweak()">
+                            <option value="rbf">RBF (Radial Basis)</option>
+                            <option value="linear">Linear</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Regularization C</span>
+                            <span id="val_svmC">1.0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="svmC" min="1" max="100" value="10" oninput="updateHyperVal('svmC', (this.value / 10).toFixed(1))">
+                        </div>
+                    </div>
+                    <div id="svmGammaGroup" class="control-group">
+                        <div class="control-label">
+                            <span>Gamma (RBF Scale)</span>
+                            <span id="val_svmGamma">0.5</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="svmGamma" min="1" max="50" value="5" oninput="updateHyperVal('svmGamma', (this.value / 10).toFixed(1))">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decision Tree Controls -->
+                <div id="configDecisionTree" style="display: none;">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Max Depth</span>
+                            <span id="val_dtMaxDepth">5</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="dtMaxDepth" min="1" max="10" value="5" oninput="updateHyperVal('dtMaxDepth', this.value)">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Min Samples Split</span>
+                            <span id="val_dtMinSplit">2</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="dtMinSplit" min="2" max="15" value="2" oninput="updateHyperVal('dtMinSplit', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KNN Controls -->
+                <div id="configKNN" style="display: none;">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Number of Neighbors (K)</span>
+                            <span id="val_knnK">3</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="knnK" min="1" max="15" value="3" oninput="updateHyperVal('knnK', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logistic / Ridge regression controls -->
+                <div id="configLogReg" style="display: none;">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Learning Rate</span>
+                            <span id="val_lrLR">0.10</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="lrLR" min="1" max="100" value="20" oninput="updateHyperVal('lrLR', (this.value / 200).toFixed(2))">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>L2 Penalty (Ridge)</span>
+                            <span id="val_lrL2">0.001</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="lrL2" min="0" max="100" value="10" oninput="updateHyperVal('lrL2', this.value / 10000)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- K-Means controls -->
+                <div id="configKMeans" style="display: none;">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Number of Clusters (K)</span>
+                            <span id="val_clustK">3</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="clustK" min="1" max="8" value="3" oninput="updateHyperVal('clustK', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Live Neural topology layout graph -->
+            <div class="glass-card nn-visualizer-card" id="nnVisualizerCard">
+                <div class="card-title">
+                    <div class="card-title-left">
+                        <i class="fa-solid fa-circle-nodes"></i> Model Topology Graph
+                    </div>
+                </div>
+                <canvas id="nnVisualizerCanvas"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Bottom tabbed sections -->
+    <div class="app-container" style="padding-top: 0;">
+        <div class="glass-card bottom-tabs-card">
+            
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('tabCode')">
+                    <i class="fa-solid fa-code"></i> Python Exporter
+                </button>
+                <button class="tab-btn" onclick="switchTab('tabCharts')">
+                    <i class="fa-solid fa-chart-line"></i> Metrics Dashboard
+                </button>
+                <button class="tab-btn" onclick="switchTab('tabCSV')">
+                    <i class="fa-solid fa-file-csv"></i> CSV Upload & Column Mapper
+                </button>
+            </div>
+
+            <!-- Exporter -->
+            <div id="tabCode" class="tab-content active">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                    This Python code uses the mapped coordinates, splits the dataset, maps the engineered features, fits your selected ML model, and saves the decision boundary plots locally.
+                </p>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-lang">aether_ml_project.py</span>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="code-copy-btn" onclick="copyCode()" title="Copy Code">
+                                <i class="fa-regular fa-copy"></i> Copy Code
+                            </button>
+                            <button class="code-copy-btn" onclick="downloadPythonScript()" title="Download .py Script">
+                                <i class="fa-solid fa-download"></i> Download Script
+                            </button>
+                        </div>
+                    </div>
+                    <pre><code id="pythonCode"># Python code will generate once points are plotted...</code></pre>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div id="tabCharts" class="tab-content">
+                <div class="charts-grid">
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem;" id="chartTitle">Training & Validation Curves</div>
+                        <div class="chart-box">
+                            <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="confusion-matrix-box" id="confusionMatrixContainer">
+                        <div style="font-size: 0.85rem; font-weight: bold; text-align: center;">Confusion Matrix (Test Data)</div>
+                        <div class="matrix-grid">
+                            <div class="matrix-cell" id="cm_0_0">0</div>
+                            <div class="matrix-cell" id="cm_0_1">0</div>
+                            <div class="matrix-cell" id="cm_0_2">0</div>
+                            <div class="matrix-cell" id="cm_1_0">0</div>
+                            <div class="matrix-cell" id="cm_1_1">0</div>
+                            <div class="matrix-cell" id="cm_1_2">0</div>
+                            <div class="matrix-cell" id="cm_2_0">0</div>
+                            <div class="matrix-cell" id="cm_2_1">0</div>
+                            <div class="matrix-cell" id="cm_2_2">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSV Upload & Column mapping panel -->
+            <div id="tabCSV" class="tab-content">
+                <div class="csv-box">
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">
+                        Drag and drop a CSV file below to map its fields into features. Coordinates will automatically scale to range between -1.0 and 1.0.
+                    </p>
+                    
+                    <div id="csvDropZone" class="csv-drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <p id="csvDropZoneText">Drag & Drop CSV file here or click to browse</p>
+                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                    </div>
+
+                    <!-- Meta information box -->
+                    <div id="csvMetaInfo" class="csv-meta-info" style="display: none;">
+                        <span>Uploaded File: <strong id="csvFileName">data.csv</strong></span>
+                        <button class="btn" onclick="clearCsvUpload()">Clear Upload</button>
+                    </div>
+
+                    <!-- Mapping select dropdowns -->
+                    <div id="columnMapper" class="column-mapper-grid" style="display: none;">
+                        <div class="control-group" style="margin-bottom: 0;">
+                            <div class="control-label">X₁ Column (Horizontal Axis)</div>
+                            <select id="selectColX1"></select>
+                        </div>
+                        <div class="control-group" style="margin-bottom: 0;">
+                            <div class="control-label">X₂ Column (Vertical Axis)</div>
+                            <select id="selectColX2"></select>
+                        </div>
+                        <div class="control-group" style="margin-bottom: 0;" id="targetColMapperWrapper">
+                            <div class="control-label">Target Y Column</div>
+                            <select id="selectColY"></select>
+                        </div>
+                        <button class="btn btn-active" onclick="applyCsvMapping()" style="grid-column: 1 / -1; margin-top: 0.5rem; padding: 0.6rem;">
+                            <i class="fa-solid fa-play"></i> Map and Load Dataset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PURE JAVASCRIPT ML sandbox ENGINE -->
+    <script>
+        // --- APP STATE ---
+        let points = []; // Array of objects: {x: normalized_X, y: normalized_Y, label: float_or_int, isTest: boolean}
+        let selectedClass = 0; // Current class to paint (Classification mode)
+        let paintY = 0.0; // Current target value to paint (Regression mode)
+        let drawingTool = 'add'; // 'add', 'brush', 'erase'
+        let selectedFeatures = {
+            x1: true, x2: true, x1_sq: false, x2_sq: false, x1_x2: false, sin_x1: false, sin_x2: false
+        };
+        
+        let activeTask = 'classification'; // 'classification', 'regression', 'clustering'
+        let currentModelName = 'neural_net';
+        let viewMode = 'single'; // 'single', 'compare'
+        
+        // Single view models
+        let model = null;
+        
+        // Comparison view models
+        let modelSelectA = 'svm';
+        let modelSelectB = 'neural_net';
+        let modelSelectC = 'decision_tree';
+        let modelA = null;
+        let modelB = null;
+        let modelC = null;
+        
+        let isTraining = false;
+        let trainingAnimFrame = null;
+        let currentEpoch = 0;
+        let noiseLevel = 10;
+        let splitRatio = 0.80;
+        
+        // Neural network properties
+        let hiddenLayers = [8, 4];
+        
+        // CSV upload states
+        let parsedHeaders = [];
+        let parsedRows = [];
+        
+        // Canvases
+        const canvas = document.getElementById('mlCanvas');
+        const ctx = canvas.getContext('2d');
+        const nnCanvas = document.getElementById('nnVisualizerCanvas');
+        const nnCtx = nnCanvas.getContext('2d');
+        
+        // Comparison canvases
+        const canvasCompareA = document.getElementById('canvasCompareA');
+        const ctxA = canvasCompareA.getContext('2d');
+        const canvasCompareB = document.getElementById('canvasCompareB');
+        const ctxB = canvasCompareB.getContext('2d');
+        const canvasCompareC = document.getElementById('canvasCompareC');
+        const ctxC = canvasCompareC.getContext('2d');
+        
+        let metricsChart = null;
+
+        // --- MATH / SYSTEM SOLVER FOR REGRESSION (Kernel Ridge / Linear Ridge) ---
+        
+        function solveLinearSystem(A, b) {
+            let n = b.length;
+            let M = [];
+            for (let i = 0; i < n; i++) {
+                M.push([...A[i], b[i]]);
+            }
+            
+            // Gaussian Elimination with partial pivoting
+            for (let i = 0; i < n; i++) {
+                let maxEl = Math.abs(M[i][i]);
+                let maxRow = i;
+                for (let k = i + 1; k < n; k++) {
+                    if (Math.abs(M[k][i]) > maxEl) {
+                        maxEl = Math.abs(M[k][i]);
+                        maxRow = k;
+                    }
+                }
+                
+                let temp = M[maxRow];
+                M[maxRow] = M[i];
+                M[i] = temp;
+                
+                if (Math.abs(M[i][i]) < 1e-12) {
+                    M[i][i] += 1e-6; // add ridge regularization fallback
+                }
+                
+                for (let k = i + 1; k < n; k++) {
+                    let c = -M[k][i] / M[i][i];
+                    for (let j = i; j <= n; j++) {
+                        if (i === j) M[k][j] = 0;
+                        else M[k][j] += c * M[i][j];
+                    }
+                }
+            }
+            
+            // Back Substitution
+            let x = new Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                let sum = M[i][n];
+                for (let j = i + 1; j < n; j++) {
+                    sum -= M[i][j] * x[j];
+                }
+                x[i] = sum / M[i][i];
+            }
+            return x;
+        }
+
+        // --- ML ENGINES IMPLEMENTATION ---
+        
+        function mapFeatures(x1, x2) {
+            let vec = [];
+            if (selectedFeatures.x1) vec.push(x1);
+            if (selectedFeatures.x2) vec.push(x2);
+            if (selectedFeatures.x1_sq) vec.push(x1 * x1);
+            if (selectedFeatures.x2_sq) vec.push(x2 * x2);
+            if (selectedFeatures.x1_x2) vec.push(x1 * x2);
+            if (selectedFeatures.sin_x1) vec.push(Math.sin(x1));
+            if (selectedFeatures.sin_x2) vec.push(Math.sin(x2));
+            return vec;
+        }
+
+        // 1. NEURAL NETWORK (Supports Classification & Regression)
+        class NeuralNetwork {
+            constructor(layers, activation = 'tanh', lr = 0.03, L2 = 0.001, isRegression = false) {
+                this.layers = layers;
+                this.activationName = activation;
+                this.lr = lr;
+                this.L2 = L2;
+                this.isRegression = isRegression;
+                
+                this.weights = [];
+                this.biases = [];
+                
+                // Xavier/He init
+                for (let i = 0; i < layers.length - 1; i++) {
+                    let rows = layers[i + 1];
+                    let cols = layers[i];
+                    let w = [];
+                    for (let r = 0; r < rows; r++) {
+                        let row = [];
+                        for (let c = 0; c < cols; c++) {
+                            let variance = 2.0 / cols;
+                            let std = Math.sqrt(variance);
+                            row.push((Math.random() - 0.5) * 2 * std);
+                        }
+                        w.push(row);
+                    }
+                    this.weights.push(w);
+                    this.biases.push(new Array(rows).fill(0.1));
+                }
+            }
+
+            activate(x) {
+                if (this.activationName === 'relu') return Math.max(0, x);
+                if (this.activationName === 'sigmoid') return 1.0 / (1.0 + Math.exp(-x));
+                if (this.activationName === 'tanh') return Math.tanh(x);
+                return x;
+            }
+
+            activationDerivative(a) {
+                if (this.activationName === 'relu') return a > 0 ? 1 : 0;
+                if (this.activationName === 'sigmoid') return a * (1 - a);
+                if (this.activationName === 'tanh') return 1 - a * a;
+                return 1;
+            }
+
+            forward(x) {
+                let activations = [x];
+                let zs = [];
+                
+                for (let i = 0; i < this.weights.length; i++) {
+                    let prevA = activations[activations.length - 1];
+                    let w = this.weights[i];
+                    let b = this.biases[i];
+                    let z = [];
+                    let nextA = [];
+                    
+                    for (let r = 0; r < w.length; r++) {
+                        let sum = b[r];
+                        for (let c = 0; c < w[r].length; c++) {
+                            sum += w[r][c] * prevA[c];
+                        }
+                        z.push(sum);
+                        if (i < this.weights.length - 1) {
+                            nextA.push(this.activate(sum));
+                        }
+                    }
+                    
+                    if (i === this.weights.length - 1) {
+                        if (this.isRegression) {
+                            // Linear activation for regression output layer
+                            nextA = z;
+                        } else {
+                            // Softmax for classification output layer
+                            let maxZ = Math.max(...z);
+                            let exps = z.map(val => Math.exp(val - maxZ));
+                            let sumExps = exps.reduce((s, v) => s + v, 0);
+                            nextA = exps.map(v => v / (sumExps || 1));
+                        }
+                    }
+                    
+                    zs.push(z);
+                    activations.push(nextA);
+                }
+                return { activations, zs };
+            }
+
+            backprop(x, target) {
+                let { activations, zs } = this.forward(x);
+                let gradsW = [];
+                let gradsB = [];
+                
+                for (let i = 0; i < this.weights.length; i++) {
+                    gradsW.push(this.weights[i].map(row => new Array(row.length).fill(0)));
+                    gradsB.push(new Array(this.biases[i].length).fill(0));
+                }
+                
+                let L = this.layers.length;
+                let outputA = activations[activations.length - 1];
+                let delta = [];
+                
+                if (this.isRegression) {
+                    // MSE loss derivative: pred - target (target is float)
+                    delta.push(outputA[0] - target);
+                } else {
+                    // Classification Softmax cross-entropy gradient: pred - target (target is One-Hot array)
+                    for (let i = 0; i < outputA.length; i++) {
+                        delta.push(outputA[i] - target[i]);
+                    }
+                }
+                
+                for (let l = L - 2; l >= 0; l--) {
+                    let w = this.weights[l];
+                    let prevA = activations[l];
+                    
+                    for (let r = 0; r < w.length; r++) {
+                        gradsB[l][r] = delta[r];
+                        for (let c = 0; c < w[r].length; c++) {
+                            gradsW[l][r][c] = delta[r] * prevA[c];
+                        }
+                    }
+                    
+                    if (l > 0) {
+                        let nextDelta = [];
+                        for (let c = 0; c < w[0].length; c++) {
+                            let sum = 0;
+                            for (let r = 0; r < w.length; r++) {
+                                sum += w[r][c] * delta[r];
+                            }
+                            sum *= this.activationDerivative(prevA[c]);
+                            nextDelta.push(sum);
+                        }
+                        delta = nextDelta;
+                    }
+                }
+                return { gradsW, gradsB };
+            }
+
+            trainEpoch(X, y) {
+                let N = X.length;
+                if (N === 0) return 0;
+                
+                let sumLoss = 0;
+                let batchGradW = this.weights.map(w => w.map(row => new Array(row.length).fill(0)));
+                let batchGradB = this.biases.map(b => new Array(b.length).fill(0));
+                
+                for (let i = 0; i < N; i++) {
+                    let xVec = X[i];
+                    let label = y[i];
+                    
+                    let target;
+                    if (this.isRegression) {
+                        target = label; // Float value
+                    } else {
+                        target = [0, 0, 0]; // One Hot
+                        target[label] = 1;
+                    }
+                    
+                    let { activations } = this.forward(xVec);
+                    let out = activations[activations.length - 1];
+                    
+                    if (this.isRegression) {
+                        sumLoss += 0.5 * ((out[0] - target) ** 2);
+                    } else {
+                        sumLoss -= Math.log(Math.max(out[label], 1e-15));
+                    }
+                    
+                    let { gradsW, gradsB } = this.backprop(xVec, target);
+                    
+                    // Accumulate
+                    for (let l = 0; l < this.weights.length; l++) {
+                        for (let r = 0; r < this.weights[l].length; r++) {
+                            batchGradB[l][r] += gradsB[l][r];
+                            for (let c = 0; c < this.weights[l][r].length; c++) {
+                                batchGradW[l][r][c] += gradsW[l][r][c];
+                            }
+                        }
+                    }
+                }
+                
+                // SGD update
+                for (let l = 0; l < this.weights.length; l++) {
+                    for (let r = 0; r < this.weights[l].length; r++) {
+                        this.biases[l][r] -= this.lr * (batchGradB[l][r] / N);
+                        for (let c = 0; c < this.weights[l][r].length; c++) {
+                            let reg = this.L2 * this.weights[l][r][c];
+                            this.weights[l][r][c] -= this.lr * (batchGradW[l][r][c] / N + reg);
+                        }
+                    }
+                }
+                return sumLoss / N;
+            }
+
+            predict(x) {
+                let { activations } = this.forward(x);
+                let out = activations[activations.length - 1];
+                if (this.isRegression) {
+                    return out[0]; // Returns single predicted float value
+                }
+                return out; // Returns probability distribution [probs]
+            }
+        }
+
+        // 2. SVM (Supports Dual SVM Classification & Closed-form Kernel Ridge Regression)
+        class BinarySVM {
+            constructor(kernelType = 'rbf', C = 1.0, gamma = 0.5) {
+                this.kernelType = kernelType;
+                this.C = C;
+                this.gamma = gamma;
+                this.alpha = [];
+                this.X = [];
+                this.y = [];
+                this.b = 0;
+            }
+
+            kernel(x1, x2) {
+                if (this.kernelType === 'linear') {
+                    let dot = 0;
+                    for (let i = 0; i < x1.length; i++) dot += x1[i] * x2[i];
+                    return dot;
+                } else {
+                    let dist = 0;
+                    for (let i = 0; i < x1.length; i++) dist += (x1[i] - x2[i]) ** 2;
+                    return Math.exp(-this.gamma * dist);
+                }
+            }
+
+            fit(X, y) {
+                this.X = X;
+                this.y = y;
+                let N = X.length;
+                this.alpha = new Array(N).fill(0);
+                this.b = 0;
+                if (N === 0) return;
+
+                let K = [];
+                for (let i = 0; i < N; i++) {
+                    K.push(new Array(N));
+                }
+                for (let i = 0; i < N; i++) {
+                    for (let j = i; j < N; j++) {
+                        let val = this.kernel(X[i], X[j]);
+                        K[i][j] = val;
+                        K[j][i] = val;
+                    }
+                }
+
+                // Dual Projected GD (Soft Margin SVM)
+                let lr = 0.02;
+                for (let step = 0; step < 120; step++) {
+                    for (let i = 0; i < N; i++) {
+                        let sum = 0;
+                        for (let j = 0; j < N; j++) {
+                            sum += this.alpha[j] * y[j] * K[i][j];
+                        }
+                        let grad = 1 - y[i] * sum;
+                        this.alpha[i] += lr * grad;
+                        if (this.alpha[i] < 0) this.alpha[i] = 0;
+                        if (this.alpha[i] > this.C) this.alpha[i] = this.C;
+                    }
+                }
+
+                // Solve intercept b
+                let sumB = 0;
+                let countB = 0;
+                for (let i = 0; i < N; i++) {
+                    if (this.alpha[i] > 1e-4 && this.alpha[i] < this.C - 1e-4) {
+                        let sum = 0;
+                        for (let j = 0; j < N; j++) {
+                            sum += this.alpha[j] * y[j] * K[i][j];
+                        }
+                        sumB += y[i] - sum;
+                        countB++;
+                    }
+                }
+                this.b = countB > 0 ? sumB / countB : 0;
+            }
+
+            predictVal(x) {
+                let sum = 0;
+                for (let i = 0; i < this.X.length; i++) {
+                    if (this.alpha[i] > 1e-5) {
+                        sum += this.alpha[i] * this.y[i] * this.kernel(this.X[i], x);
+                    }
+                }
+                return sum + this.b;
+            }
+        }
+
+        class MulticlassSVM {
+            constructor(kernelType = 'rbf', C = 1.0, gamma = 0.5) {
+                this.kernelType = kernelType;
+                this.C = C;
+                this.gamma = gamma;
+                this.svms = [];
+            }
+
+            fit(X, y) {
+                this.svms = [];
+                for (let c = 0; c < 3; c++) {
+                    let svm = new BinarySVM(this.kernelType, this.C, this.gamma);
+                    let binaryY = y.map(v => v === c ? 1 : -1);
+                    svm.fit(X, binaryY);
+                    this.svms.push(svm);
+                }
+            }
+
+            predict(x) {
+                let vals = this.svms.map(svm => svm.predictVal(x));
+                let maxV = Math.max(...vals);
+                let exps = vals.map(v => Math.exp(v - maxV));
+                let sum = exps.reduce((a, b) => a + b, 0);
+                return exps.map(v => v / (sum || 1));
+            }
+        }
+
+        // Closed-form Kernel Ridge Regression (used for SVR-equivalent Regression SVM)
+        class KernelRidgeRegression {
+            constructor(kernelType = 'rbf', L2 = 0.001, gamma = 0.5) {
+                this.kernelType = kernelType;
+                this.L2 = L2;
+                this.gamma = gamma;
+                this.X = [];
+                this.w = null;
+            }
+
+            kernel(x1, x2) {
+                if (this.kernelType === 'linear') {
+                    let dot = 0;
+                    for (let i = 0; i < x1.length; i++) dot += x1[i] * x2[i];
+                    return dot;
+                } else {
+                    let dist = 0;
+                    for (let i = 0; i < x1.length; i++) dist += (x1[i] - x2[i]) ** 2;
+                    return Math.exp(-this.gamma * dist);
+                }
+            }
+
+            fit(X, y) {
+                this.X = X;
+                let N = X.length;
+                if (N === 0) return;
+
+                // Build Kernel matrix K
+                let K = [];
+                for (let i = 0; i < N; i++) {
+                    K.push(new Array(N));
+                }
+                for (let i = 0; i < N; i++) {
+                    for (let j = i; j < N; j++) {
+                        let val = this.kernel(X[i], X[j]);
+                        K[i][j] = val;
+                        K[j][i] = val;
+                    }
+                }
+
+                // Add ridge regularisation to diagonal (K + L2 * I)
+                for (let i = 0; i < N; i++) {
+                    K[i][i] += this.L2;
+                }
+
+                // Solve (K + L2 * I) * w = y
+                this.w = solveLinearSystem(K, y);
+            }
+
+            predict(x) {
+                if (!this.w || this.X.length === 0) return 0.0;
+                let sum = 0;
+                for (let i = 0; i < this.X.length; i++) {
+                    sum += this.w[i] * this.kernel(this.X[i], x);
+                }
+                return sum;
+            }
+        }
+
+        // 3. DECISION TREE (Supports Classification & Regression splits via Gini / Variance minimization)
+        class DecisionTreeNode {
+            constructor() {
+                this.feature = null;
+                this.threshold = null;
+                this.left = null;
+                this.right = null;
+                this.probs = null; // Classification output array
+                this.val = 0; // Regression output float
+                this.isLeaf = false;
+            }
+        }
+
+        class DecisionTree {
+            constructor(maxDepth = 5, minSamplesSplit = 2, isRegression = false) {
+                this.maxDepth = maxDepth;
+                this.minSamplesSplit = minSamplesSplit;
+                this.isRegression = isRegression;
+                this.root = null;
+            }
+
+            fit(X, y) {
+                this.root = this._buildTree(X, y, 0);
+            }
+
+            _gini(y) {
+                if (y.length === 0) return 0;
+                let counts = [0, 0, 0];
+                for (let val of y) counts[val]++;
+                let impurity = 1.0;
+                for (let c = 0; c < counts.length; c++) {
+                    let p = counts[c] / y.length;
+                    impurity -= p * p;
+                }
+                return impurity;
+            }
+
+            _variance(y) {
+                let N = y.length;
+                if (N === 0) return 0;
+                let mean = y.reduce((s, v) => s + v, 0) / N;
+                let sumSq = y.reduce((s, v) => s + (v - mean) ** 2, 0);
+                return sumSq / N;
+            }
+
+            _buildTree(X, y, depth) {
+                let numSamples = X.length;
+                let numFeatures = X.length > 0 ? X[0].length : 0;
+                
+                let node = new DecisionTreeNode();
+                
+                if (this.isRegression) {
+                    node.val = numSamples > 0 ? y.reduce((s, v) => s + v, 0) / numSamples : 0;
+                } else {
+                    let counts = [0, 0, 0];
+                    for (let val of y) counts[val]++;
+                    node.probs = counts.map(v => v / (y.length || 1));
+                }
+
+                let uniqueLabels = new Set(y);
+                if (uniqueLabels.size <= 1 || numSamples < this.minSamplesSplit || depth >= this.maxDepth) {
+                    node.isLeaf = true;
+                    return node;
+                }
+
+                let bestCriteria = Infinity; // Find split that minimizes Gini (classification) or Variance (regression)
+                let bestFeature = null;
+                let bestThreshold = null;
+                let bestLeftX = null, bestLeftY = null;
+                let bestRightX = null, bestRightY = null;
+
+                for (let f = 0; f < numFeatures; f++) {
+                    let vals = X.map(row => row[f]);
+                    vals.sort((a, b) => a - b);
+                    
+                    let candidates = [];
+                    for (let i = 0; i < vals.length - 1; i++) {
+                        candidates.push((vals[i] + vals[i + 1]) / 2);
+                    }
+
+                    for (let t of candidates) {
+                        let leftX = [], leftY = [];
+                        let rightX = [], rightY = [];
+                        for (let i = 0; i < numSamples; i++) {
+                            if (X[i][f] < t) {
+                                leftX.push(X[i]);
+                                leftY.push(y[i]);
+                            } else {
+                                rightX.push(X[i]);
+                                rightY.push(y[i]);
+                            }
+                        }
+
+                        if (leftY.length === 0 || rightY.length === 0) continue;
+
+                        let criteriaVal;
+                        if (this.isRegression) {
+                            let varL = this._variance(leftY);
+                            let varR = this._variance(rightY);
+                            criteriaVal = (leftY.length / numSamples) * varL + (rightY.length / numSamples) * varR;
+                        } else {
+                            let giniL = this._gini(leftY);
+                            let giniR = this._gini(rightY);
+                            criteriaVal = (leftY.length / numSamples) * giniL + (rightY.length / numSamples) * giniR;
+                        }
+
+                        if (criteriaVal < bestCriteria) {
+                            bestCriteria = criteriaVal;
+                            bestFeature = f;
+                            bestThreshold = t;
+                            bestLeftX = leftX; bestLeftY = leftY;
+                            bestRightX = rightX; bestRightY = rightY;
+                        }
+                    }
+                }
+
+                if (bestFeature === null) {
+                    node.isLeaf = true;
+                    return node;
+                }
+
+                node.feature = bestFeature;
+                node.threshold = bestThreshold;
+                node.left = this._buildTree(bestLeftX, bestLeftY, depth + 1);
+                node.right = this._buildTree(bestRightX, bestRightY, depth + 1);
+                return node;
+            }
+
+            predict(x) {
+                return this._predictNode(this.root, x);
+            }
+
+            _predictNode(node, x) {
+                if (!node) return this.isRegression ? 0.0 : [1/3, 1/3, 1/3];
+                if (node.isLeaf) return this.isRegression ? node.val : node.probs;
+                if (x[node.feature] < node.threshold) {
+                    return this._predictNode(node.left, x);
+                } else {
+                    return this._predictNode(node.right, x);
+                }
+            }
+        }
+
+        // 4. K-NEAREST NEIGHBORS (Supports Classification Voting & Regression Averaging)
+        class KNN {
+            constructor(k = 3, isRegression = false) {
+                this.k = k;
+                this.isRegression = isRegression;
+                this.X = [];
+                this.y = [];
+            }
+
+            fit(X, y) {
+                this.X = X;
+                this.y = y;
+            }
+
+            predict(x) {
+                if (this.X.length === 0) return this.isRegression ? 0.0 : [1/3, 1/3, 1/3];
+                
+                let dists = [];
+                for (let i = 0; i < this.X.length; i++) {
+                    let d = 0;
+                    for (let j = 0; j < x.length; j++) {
+                        d += (x[j] - this.X[i][j]) ** 2;
+                    }
+                    dists.push({ d: Math.sqrt(d), val: this.y[i] });
+                }
+                
+                dists.sort((a, b) => a.d - b.d);
+                let limit = Math.min(this.k, dists.length);
+                
+                if (this.isRegression) {
+                    // Average neighbors targets
+                    let sum = 0;
+                    for (let i = 0; i < limit; i++) {
+                        sum += dists[i].val;
+                    }
+                    return sum / (limit || 1);
+                } else {
+                    // Vote classification
+                    let counts = [0, 0, 0];
+                    for (let i = 0; i < limit; i++) {
+                        counts[dists[i].val]++;
+                    }
+                    let sum = counts.reduce((a, b) => a + b, 0);
+                    return counts.map(v => v / (sum || 1));
+                }
+            }
+        }
+
+        // 5. REGULARIZED LINEAR / LOGISTIC REGRESSION (Softmax Classify vs Closed-form Ridge Regression)
+        class LogisticRegression {
+            constructor(inputDim, lr = 0.1, L2 = 0.001) {
+                this.lr = lr;
+                this.L2 = L2;
+                this.weights = [];
+                for (let i = 0; i < 3; i++) {
+                    this.weights.push(new Array(inputDim).fill(0));
+                }
+                this.biases = new Array(3).fill(0);
+            }
+
+            fitEpoch(X, y) {
+                let N = X.length;
+                if (N === 0) return 0;
+                
+                let gradW = this.weights.map(row => row.map(() => 0));
+                let gradB = new Array(3).fill(0);
+                let loss = 0;
+
+                for (let i = 0; i < N; i++) {
+                    let x = X[i];
+                    let label = y[i];
+
+                    let scores = [];
+                    for (let c = 0; c < 3; c++) {
+                        let score = this.biases[c];
+                        for (let j = 0; j < x.length; j++) {
+                            score += this.weights[c][j] * x[j];
+                        }
+                        scores.push(score);
+                    }
+                    
+                    let maxS = Math.max(...scores);
+                    let exps = scores.map(s => Math.exp(s - maxS));
+                    let sum = exps.reduce((a, b) => a + b, 0);
+                    let probs = exps.map(e => e / (sum || 1));
+
+                    loss -= Math.log(Math.max(probs[label], 1e-15));
+
+                    for (let c = 0; c < 3; c++) {
+                        let target = (c === label) ? 1 : 0;
+                        let error = probs[c] - target;
+                        gradB[c] += error;
+                        for (let j = 0; j < x.length; j++) {
+                            gradW[c][j] += error * x[j];
+                        }
+                    }
+                }
+
+                // SGD Update
+                for (let c = 0; c < 3; c++) {
+                    this.biases[c] -= this.lr * (gradB[c] / N);
+                    for (let j = 0; j < this.weights[c].length; j++) {
+                        let reg = this.L2 * this.weights[c][j];
+                        this.weights[c][j] -= this.lr * (gradW[c][j] / N + reg);
+                    }
+                }
+                return loss / N;
+            }
+
+            predict(x) {
+                let scores = [];
+                for (let c = 0; c < 3; c++) {
+                    let s = this.biases[c];
+                    for (let j = 0; j < x.length; j++) {
+                        s += this.weights[c][j] * x[j];
+                    }
+                    scores.push(s);
+                }
+                let maxS = Math.max(...scores);
+                let exps = scores.map(s => Math.exp(s - maxS));
+                let sum = exps.reduce((a, b) => a + b, 0);
+                return exps.map(v => v / (sum || 1));
+            }
+        }
+
+        // Closed-form Linear Ridge Regression (used for Regression Task)
+        class RidgeRegression {
+            constructor(L2 = 0.001) {
+                this.L2 = L2;
+                this.w = null;
+            }
+
+            fit(X, y) {
+                let N = X.length;
+                if (N === 0) return;
+                let D = X[0].length;
+
+                // compute Xt * X
+                let XtX = [];
+                for (let i = 0; i < D; i++) {
+                    XtX.push(new Array(D).fill(0));
+                }
+                for (let i = 0; i < D; i++) {
+                    for (let j = 0; j < D; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < N; k++) {
+                            sum += X[k][i] * X[k][j];
+                        }
+                        XtX[i][j] = sum;
+                    }
+                }
+
+                // Add diagonal regularization
+                for (let i = 0; i < D; i++) {
+                    XtX[i][i] += this.L2 * N;
+                }
+
+                // compute Xt * y
+                let Xty = new Array(D).fill(0);
+                for (let i = 0; i < D; i++) {
+                    let sum = 0;
+                    for (let k = 0; k < N; k++) {
+                        sum += X[k][i] * y[k];
+                    }
+                    Xty[i] = sum;
+                }
+
+                // Solve XtX * w = Xty
+                this.w = solveLinearSystem(XtX, Xty);
+            }
+
+            predict(x) {
+                if (!this.w) return 0.0;
+                let sum = 0;
+                for (let i = 0; i < x.length; i++) {
+                    sum += this.w[i] * x[i];
+                }
+                return sum;
+            }
+        }
+
+        // 6. UNSUPERVISED CLUSTERING (K-Means Centroid Classifier)
+        class KMeans {
+            constructor(k = 3) {
+                this.k = k;
+                this.centroids = [];
+                this.assignments = [];
+            }
+
+            fit(X, maxIters = 25) {
+                let N = X.length;
+                if (N === 0) return;
+                let D = X[0].length;
+
+                // Forgy initialisation: pick random centroids from dataset
+                this.centroids = [];
+                let indices = [];
+                while (indices.length < Math.min(this.k, N)) {
+                    let rIdx = Math.floor(Math.random() * N);
+                    if (!indices.includes(rIdx)) indices.push(rIdx);
+                }
+                for (let idx of indices) {
+                    this.centroids.push([...X[idx]]);
+                }
+                
+                // Fallback for empty slots
+                while (this.centroids.length < this.k) {
+                    this.centroids.push([Math.random() * 2 - 1, Math.random() * 2 - 1]);
+                }
+
+                this.assignments = new Array(N).fill(-1);
+
+                for (let iter = 0; iter < maxIters; iter++) {
+                    let changed = false;
+
+                    // 1. Assignment
+                    for (let i = 0; i < N; i++) {
+                        let bestDist = Infinity;
+                        let bestCentroid = -1;
+                        for (let c = 0; c < this.centroids.length; c++) {
+                            let dist = 0;
+                            for (let j = 0; j < D; j++) {
+                                dist += (X[i][j] - this.centroids[c][j]) ** 2;
+                            }
+                            if (dist < bestDist) {
+                                bestDist = dist;
+                                bestCentroid = c;
+                            }
+                        }
+                        if (this.assignments[i] !== bestCentroid) {
+                            this.assignments[i] = bestCentroid;
+                            changed = true;
+                        }
+                    }
+
+                    // 2. Update centroids
+                    let sums = [];
+                    let counts = new Array(this.centroids.length).fill(0);
+                    for (let c = 0; c < this.centroids.length; c++) {
+                        sums.push(new Array(D).fill(0));
+                    }
+
+                    for (let i = 0; i < N; i++) {
+                        let c = this.assignments[i];
+                        if (c >= 0 && c < this.centroids.length) {
+                            counts[c]++;
+                            for (let j = 0; j < D; j++) {
+                                sums[c][j] += X[i][j];
+                            }
+                        }
+                    }
+
+                    for (let c = 0; c < this.centroids.length; c++) {
+                        if (counts[c] > 0) {
+                            for (let j = 0; j < D; j++) {
+                                this.centroids[c][j] = sums[c][j] / counts[c];
+                            }
+                        } else {
+                            // Re-initialize empty cluster centroid randomly
+                            this.centroids[c] = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+                            changed = true;
+                        }
+                    }
+
+                    if (!changed) break;
+                }
+            }
+
+            predict(x) {
+                if (this.centroids.length === 0) return [1/3, 1/3, 1/3];
+                let bestDist = Infinity;
+                let bestCentroid = -1;
+                for (let c = 0; c < this.centroids.length; c++) {
+                    let d = 0;
+                    for (let j = 0; j < x.length; j++) {
+                        d += (x[j] - this.centroids[c][j]) ** 2;
+                    }
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestCentroid = c;
+                    }
+                }
+                
+                // One Hot representation for Voronoi boundary rendering
+                let oneHot = new Array(this.centroids.length).fill(0);
+                oneHot[bestCentroid] = 1;
+                return oneHot;
+            }
+
+            getWCSS(X) {
+                let N = X.length;
+                if (N === 0) return 0;
+                let wcss = 0;
+                for (let i = 0; i < N; i++) {
+                    let c = this.assignments[i];
+                    if (c >= 0 && c < this.centroids.length) {
+                        let dist = 0;
+                        for (let j = 0; j < X[i].length; j++) {
+                            dist += (X[i][j] - this.centroids[c][j]) ** 2;
+                        }
+                        wcss += dist;
+                    }
+                }
+                return wcss;
+            }
+        }
+
+        // --- MODEL INSTANTIATION WRAPPERS ---
+        
+        function createSingleModel(modelType, task) {
+            let inputDim = Object.values(selectedFeatures).filter(v => v).length;
+            
+            if (task === 'clustering') {
+                let k = parseInt(document.getElementById('clustK').value);
+                return new KMeans(k);
+            }
+            
+            let isReg = (task === 'regression');
+            
+            if (modelType === 'neural_net') {
+                let act = document.getElementById('nnActivation').value;
+                let lr = parseFloat(document.getElementById('nnLR').value);
+                let l2 = parseFloat(document.getElementById('nnL2').value);
+                let layers = [inputDim, ...hiddenLayers, isReg ? 1 : 3];
+                return new NeuralNetwork(layers, act, lr, l2, isReg);
+            } 
+            else if (modelType === 'svm') {
+                let kernel = document.getElementById('svmKernel').value;
+                let C = parseFloat(document.getElementById('svmC').value);
+                let gamma = parseFloat(document.getElementById('svmGamma').value);
+                if (isReg) {
+                    return new KernelRidgeRegression(kernel, 1.0 / C, gamma);
+                } else {
+                    return new MulticlassSVM(kernel, C, gamma);
+                }
+            } 
+            else if (modelType === 'decision_tree') {
+                let maxD = parseInt(document.getElementById('dtMaxDepth').value);
+                let minS = parseInt(document.getElementById('dtMinSplit').value);
+                return new DecisionTree(maxD, minS, isReg);
+            } 
+            else if (modelType === 'knn') {
+                let k = parseInt(document.getElementById('knnK').value);
+                return new KNN(k, isReg);
+            } 
+            else if (modelType === 'logistic_regression') {
+                if (isReg) {
+                    let l2 = parseFloat(document.getElementById('lrL2').value);
+                    return new RidgeRegression(l2);
+                } else {
+                    let lr = parseFloat(document.getElementById('lrLR').value);
+                    let l2 = parseFloat(document.getElementById('lrL2').value);
+                    return new LogisticRegression(inputDim, lr, l2);
+                }
+            }
+            return null;
+        }
+
+        function initModel() {
+            model = createSingleModel(currentModelName, activeTask);
+        }
+
+        // --- TRAINING LOGIC ---
+
+        function trainInstant(singleModel, modelType, task) {
+            let trainPoints = points.filter(p => !p.isTest);
+            if (trainPoints.length === 0) return null;
+            
+            let X = trainPoints.map(p => mapFeatures(p.x, p.y));
+            
+            // Assign y values (Classification index vs Regression continuous vs Clustering ignored)
+            let y;
+            if (task === 'regression') {
+                y = trainPoints.map(p => p.label);
+            } else if (task === 'classification') {
+                y = trainPoints.map(p => Math.round(p.label));
+            }
+
+            let m = singleModel || createSingleModel(modelType, task);
+            
+            if (task === 'clustering') {
+                m.fit(X);
+            } else {
+                m.fit(X, y);
+            }
+            return m;
+        }
+
+        function triggerTrainInstant() {
+            if (viewMode === 'single') {
+                if (currentModelName === 'knn' || currentModelName === 'decision_tree' || currentModelName === 'svm' || activeTask === 'clustering') {
+                    model = trainInstant(model, currentModelName, activeTask);
+                    currentEpoch = 1;
+                    
+                    let metrics = evaluateModel(model, activeTask);
+                    updateStatsDisplay(1, 0, metrics.testVal);
+                    drawDecisionBoundary(canvas, ctx, model, activeTask);
+                }
+            } else {
+                // Train all 3 instantly if they are non-iterative models
+                let anyIterative = [modelSelectA, modelSelectB, modelSelectC].some(t => t === 'neural_net' || (t === 'logistic_regression' && activeTask === 'classification'));
+                if (!anyIterative || activeTask === 'clustering') {
+                    modelA = trainInstant(null, modelSelectA, activeTask);
+                    modelB = trainInstant(null, modelSelectB, activeTask);
+                    modelC = trainInstant(null, modelSelectC, activeTask);
+                    
+                    let metricsA = evaluateModel(modelA, activeTask);
+                    let metricsB = evaluateModel(modelB, activeTask);
+                    let metricsC = evaluateModel(modelC, activeTask);
+                    
+                    updateCompareStatsUI('A', 1, 0, metricsA.testVal);
+                    updateCompareStatsUI('B', 1, 0, metricsB.testVal);
+                    updateCompareStatsUI('C', 1, 0, metricsC.testVal);
+                    
+                    drawDecisionBoundary(canvasCompareA, ctxA, modelA, activeTask);
+                    drawDecisionBoundary(canvasCompareB, ctxB, modelB, activeTask);
+                    drawDecisionBoundary(canvasCompareC, ctxC, modelC, activeTask);
+                }
+            }
+        }
+
+        function trainIteration() {
+            let trainPoints = points.filter(p => !p.isTest);
+            if (trainPoints.length === 0) return;
+            
+            let X = trainPoints.map(p => mapFeatures(p.x, p.y));
+            let y;
+            if (activeTask === 'regression') y = trainPoints.map(p => p.label);
+            else y = trainPoints.map(p => Math.round(p.label));
+            
+            if (viewMode === 'single') {
+                let loss = 0;
+                for (let i = 0; i < 5; i++) {
+                    if (currentModelName === 'neural_net') {
+                        loss = model.trainEpoch(X, y);
+                    } else if (currentModelName === 'logistic_regression' && activeTask === 'classification') {
+                        loss = model.fitEpoch(X, y);
+                    }
+                    currentEpoch++;
+                }
+                
+                let evalMetrics = evaluateModel(model, activeTask);
+                updateStatsDisplay(currentEpoch, loss, evalMetrics.testVal);
+                
+                // Chart histories
+                if (metricsChart) {
+                    let testPoints = points.filter(p => p.isTest);
+                    let testLoss = 0;
+                    if (testPoints.length > 0) {
+                        let testX = testPoints.map(p => mapFeatures(p.x, p.y));
+                        for (let j = 0; j < testPoints.length; j++) {
+                            let pred = model.predict(testX[j]);
+                            if (activeTask === 'regression') {
+                                testLoss += 0.5 * ((pred - testPoints[j].label) ** 2);
+                            } else {
+                                testLoss -= Math.log(Math.max(pred[testPoints[j].label], 1e-15));
+                            }
+                        }
+                        testLoss /= testPoints.length;
+                    }
+                    
+                    metricsChart.data.labels.push(currentEpoch);
+                    metricsChart.data.datasets[0].data.push(loss);
+                    metricsChart.data.datasets[1].data.push(testLoss);
+                    metricsChart.data.datasets[2].data.push(evalMetrics.trainVal);
+                    metricsChart.data.datasets[3].data.push(evalMetrics.testVal);
+                    metricsChart.update('none');
+                }
+                
+                drawDecisionBoundary(canvas, ctx, model, activeTask);
+                drawNNTopology();
+            } 
+            else {
+                // Iterative training for Comparison mode (A, B, and C concurrently)
+                currentEpoch += 5;
+                
+                let lossA = runModelFitEpochs(modelA, modelSelectA, X, y, 5);
+                let lossB = runModelFitEpochs(modelB, modelSelectB, X, y, 5);
+                let lossC = runModelFitEpochs(modelC, modelSelectC, X, y, 5);
+                
+                let metricsA = evaluateModel(modelA, activeTask);
+                let metricsB = evaluateModel(modelB, activeTask);
+                let metricsC = evaluateModel(modelC, activeTask);
+                
+                updateCompareStatsUI('A', currentEpoch, lossA, metricsA.testVal);
+                updateCompareStatsUI('B', currentEpoch, lossB, metricsB.testVal);
+                updateCompareStatsUI('C', currentEpoch, lossC, metricsC.testVal);
+                
+                drawDecisionBoundary(canvasCompareA, ctxA, modelA, activeTask);
+                drawDecisionBoundary(canvasCompareB, ctxB, modelB, activeTask);
+                drawDecisionBoundary(canvasCompareC, ctxC, modelC, activeTask);
+            }
+        }
+
+        function runModelFitEpochs(m, type, X, y, count) {
+            if (!m) return 0;
+            if (type !== 'neural_net' && !(type === 'logistic_regression' && activeTask === 'classification')) return 0;
+            
+            let loss = 0;
+            for (let i = 0; i < count; i++) {
+                if (type === 'neural_net') {
+                    loss = m.trainEpoch(X, y);
+                } else if (type === 'logistic_regression') {
+                    loss = m.fitEpoch(X, y);
+                }
+            }
+            return loss;
+        }
+
+        function toggleTraining() {
+            if (isTraining) {
+                stopTraining();
+            } else {
+                startTraining();
+            }
+        }
+
+        function startTraining() {
+            if (points.length === 0) {
+                alert("Please add data points first!");
+                return;
+            }
+            
+            isTraining = true;
+            document.getElementById('statusDot').className = "status-dot active";
+            document.getElementById('statusText').innerText = "Engine Active";
+            document.getElementById('btnTrain').innerHTML = '<i class="fa-solid fa-pause"></i> Pause Training';
+            
+            resetChartHistories();
+            
+            if (viewMode === 'single') {
+                if (currentModelName === 'knn' || currentModelName === 'decision_tree' || currentModelName === 'svm' || activeTask === 'clustering') {
+                    triggerTrainInstant();
+                    stopTraining();
+                } else {
+                    initModel();
+                    currentEpoch = 0;
+                    runTrainingLoop();
+                }
+            } else {
+                // Initialize comparison models
+                modelA = createSingleModel(modelSelectA, activeTask);
+                modelB = createSingleModel(modelSelectB, activeTask);
+                modelC = createSingleModel(modelSelectC, activeTask);
+                
+                let anyIterative = [modelSelectA, modelSelectB, modelSelectC].some(t => t === 'neural_net' || (t === 'logistic_regression' && activeTask === 'classification'));
+                
+                if (!anyIterative || activeTask === 'clustering') {
+                    triggerTrainInstant();
+                    stopTraining();
+                } else {
+                    currentEpoch = 0;
+                    runTrainingLoop();
+                }
+            }
+        }
+
+        function stopTraining() {
+            isTraining = false;
+            if (trainingAnimFrame) {
+                cancelAnimationFrame(trainingAnimFrame);
+                trainingAnimFrame = null;
+            }
+            document.getElementById('statusDot').className = "status-dot";
+            document.getElementById('statusText').innerText = "Engine Idle";
+            document.getElementById('btnTrain').innerHTML = '<i class="fa-solid fa-play"></i> Train Models';
+        }
+
+        function runTrainingLoop() {
+            if (!isTraining) return;
+            trainIteration();
+            if (currentEpoch >= 400) {
+                stopTraining();
+            } else {
+                trainingAnimFrame = requestAnimationFrame(runTrainingLoop);
+            }
+        }
+
+        function evaluateModel(m, task) {
+            if (!m) return { trainVal: 0, testVal: 0 };
+            
+            let trainPoints = points.filter(p => !p.isTest);
+            let testPoints = points.filter(p => p.isTest);
+            
+            if (task === 'clustering') {
+                // Evaluated via WCSS inertia
+                let Xtrain = trainPoints.map(p => mapFeatures(p.x, p.y));
+                let Xtest = testPoints.map(p => mapFeatures(p.x, p.y));
+                
+                let trainWcss = m.getWCSS(Xtrain);
+                let testWcss = m.getWCSS(Xtest);
+                return { trainVal: trainWcss, testVal: testWcss };
+            }
+            
+            if (task === 'regression') {
+                // Evaluated via R2 score
+                let trainYTrue = trainPoints.map(p => p.label);
+                let testYTrue = testPoints.map(p => p.label);
+                
+                let trainYPred = trainPoints.map(p => m.predict(mapFeatures(p.x, p.y)));
+                let testYPred = testPoints.map(p => m.predict(mapFeatures(p.x, p.y)));
+                
+                return {
+                    trainVal: calculateR2(trainYTrue, trainYPred),
+                    testVal: calculateR2(testYTrue, testYPred)
+                };
+            }
+            
+            // Classification evaluations (Accuracy + CM)
+            let trainCorrect = 0, testCorrect = 0;
+            let cm = [[0,0,0],[0,0,0],[0,0,0]];
+            
+            for (let p of trainPoints) {
+                let probs = m.predict(mapFeatures(p.x, p.y));
+                let pred = probs.indexOf(Math.max(...probs));
+                if (pred === Math.round(p.label)) trainCorrect++;
+            }
+            
+            for (let p of testPoints) {
+                let probs = m.predict(mapFeatures(p.x, p.y));
+                let pred = probs.indexOf(Math.max(...probs));
+                let trueLbl = Math.round(p.label);
+                if (pred === trueLbl) testCorrect++;
+                if (trueLbl >= 0 && trueLbl <= 2 && pred >= 0 && pred <= 2) {
+                    cm[trueLbl][pred]++;
+                }
+            }
+            
+            // Render Confusion Matrix (only for Single model classification)
+            if (m === model && viewMode === 'single') {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        document.getElementById(`cm_${i}_${j}`).innerText = cm[i][j];
+                    }
+                }
+            }
+            
+            return {
+                trainVal: trainPoints.length > 0 ? trainCorrect / trainPoints.length : 0,
+                testVal: testPoints.length > 0 ? testCorrect / testPoints.length : 0
+            };
+        }
+
+        function calculateR2(yTrue, yPred) {
+            let N = yTrue.length;
+            if (N === 0) return 0;
+            let mean = yTrue.reduce((s, v) => s + v, 0) / N;
+            let ssRes = 0;
+            let ssTot = 0;
+            for (let i = 0; i < N; i++) {
+                ssRes += (yTrue[i] - yPred[i]) ** 2;
+                ssTot += (yTrue[i] - mean) ** 2;
+            }
+            return ssTot === 0 ? 0.0 : 1.0 - (ssRes / ssTot);
+        }
+
+        // --- DRAW BOUNDARY AND DATA POINTS ---
+
+        function drawDecisionBoundary(targetCanvas, targetCtx, targetModel, task) {
+            targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            
+            let cw = targetCanvas.width;
+            let ch = targetCanvas.height;
+            
+            // 1. Draw boundary contour background
+            if (targetModel && points.length > 0) {
+                let step = cw > 300 ? 6 : 4;
+                for (let yGrid = 0; yGrid < ch; yGrid += step) {
+                    for (let xGrid = 0; xGrid < cw; xGrid += step) {
+                        let nx = (xGrid - (cw / 2)) / (cw * 0.4);
+                        let ny = -(yGrid - (ch / 2)) / (ch * 0.4);
+                        
+                        let xMapped = mapFeatures(nx, ny);
+                        let prediction = targetModel.predict(xMapped);
+                        
+                        if (task === 'regression') {
+                            // Prediction is continuous float, map to gradient
+                            let color = getRegressionColor(prediction, 0.22);
+                            targetCtx.fillStyle = color;
+                            targetCtx.fillRect(xGrid, yGrid, step, step);
+                        } 
+                        else {
+                            // Prediction is class probability array
+                            let r = Math.round(prediction[0] * 167 + prediction[1] * 34 + (prediction[2] || 0) * 251);
+                            let g = Math.round(prediction[0] * 139 + prediction[1] * 211 + (prediction[2] || 0) * 191);
+                            let b = Math.round(prediction[0] * 250 + prediction[1] * 238 + (prediction[2] || 0) * 36);
+                            targetCtx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.22)`;
+                            targetCtx.fillRect(xGrid, yGrid, step, step);
+                        }
+                    }
+                }
+            }
+
+            // 2. Draw centroids if clustering is active
+            if (task === 'clustering' && targetModel && targetModel.centroids) {
+                targetCtx.fillStyle = '#ffffff';
+                targetCtx.strokeStyle = '#000000';
+                targetCtx.lineWidth = 1.5;
+                for (let centroid of targetModel.centroids) {
+                    let cx = (cw / 2) + centroid[0] * (cw * 0.4);
+                    let cy = (ch / 2) - centroid[1] * (ch * 0.4);
+                    
+                    targetCtx.beginPath();
+                    // Draw diamond symbol
+                    targetCtx.moveTo(cx, cy - 8);
+                    targetCtx.lineTo(cx + 8, cy);
+                    targetCtx.lineTo(cx, cy + 8);
+                    targetCtx.lineTo(cx - 8, cy);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    targetCtx.stroke();
+                }
+            }
+            
+            // 3. Draw grid coordinates axes
+            targetCtx.strokeStyle = '#27272a';
+            targetCtx.lineWidth = 1;
+            
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, ch / 2); targetCtx.lineTo(cw, ch / 2);
+            targetCtx.moveTo(cw / 2, 0); targetCtx.lineTo(cw / 2, ch);
+            targetCtx.stroke();
+            
+            targetCtx.setLineDash([2, 4]);
+            targetCtx.strokeStyle = '#18181b';
+            let spacing = cw / 10;
+            for (let i = spacing; i < cw; i += spacing) {
+                if (Math.abs(i - (cw / 2)) < 1e-3) continue;
+                targetCtx.beginPath();
+                targetCtx.moveTo(i, 0); targetCtx.lineTo(i, ch);
+                targetCtx.moveTo(0, i); targetCtx.lineTo(cw, i);
+                targetCtx.stroke();
+            }
+            targetCtx.setLineDash([]);
+            
+            // 4. Draw mapped data points
+            for (let p of points) {
+                let cx = (cw / 2) + p.x * (cw * 0.4);
+                let cy = (ch / 2) - p.y * (cw * 0.4);
+                
+                let color;
+                if (task === 'regression') {
+                    color = getRegressionColor(p.label, 1.0);
+                } else if (task === 'clustering' && targetModel && targetModel.centroids.length > 0) {
+                    // Color points based on dynamic K-Means assignments
+                    let idx = points.indexOf(p);
+                    let assignedCentroid = targetModel.assignments[idx] || 0;
+                    color = getClassificationColor(assignedCentroid);
+                } else {
+                    color = getClassificationColor(Math.round(p.label));
+                }
+                
+                targetCtx.beginPath();
+                targetCtx.arc(cx, cy, cw > 300 ? 6 : 4.5, 0, Math.PI * 2);
+                targetCtx.fillStyle = color;
+                targetCtx.fill();
+                
+                targetCtx.beginPath();
+                if (p.isTest) {
+                    targetCtx.arc(cx, cy, cw > 300 ? 2 : 1.5, 0, Math.PI * 2);
+                    targetCtx.fillStyle = '#09090b';
+                } else {
+                    targetCtx.arc(cx, cy, cw > 300 ? 1.5 : 1.0, 0, Math.PI * 2);
+                    targetCtx.fillStyle = '#ffffff';
+                }
+                targetCtx.fill();
+            }
+        }
+
+        function getClassificationColor(label) {
+            if (label === 0) return '#a78bfa'; // violet
+            if (label === 1) return '#22d3ee'; // cyan
+            return '#fbbf24'; // amber
+        }
+
+        function getRegressionColor(val, alpha) {
+            // val is mapped float in [-1, 1], scale to [0, 1]
+            let norm = (val + 1.0) / 2.0;
+            norm = Math.max(0.0, Math.min(1.0, norm));
+            
+            // Interpolate Blue (0.0) -> White (0.5) -> Red (1.0)
+            let r, g, b;
+            if (norm < 0.5) {
+                let t = norm * 2.0; // scale [0, 0.5] -> [0, 1]
+                r = Math.round(79 + t * 171); // 79 -> 250
+                g = Math.round(70 + t * 180);  // 70 -> 250
+                b = Math.round(229 + t * 21);  // 229 -> 250
+            } else {
+                let t = (norm - 0.5) * 2.0; // scale [0.5, 1.0] -> [0, 1]
+                r = Math.round(250 - t * 25);  // 250 -> 225
+                g = Math.round(250 - t * 221); // 250 -> 29
+                b = Math.round(250 - t * 180); // 250 -> 70
+            }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // --- DRAW TOPOLOGY ---
+        function drawNNTopology() {
+            nnCtx.clearRect(0, 0, nnCanvas.width, nnCanvas.height);
+            
+            if (currentModelName !== 'neural_net' || !model || viewMode !== 'single' || activeTask === 'clustering') {
+                nnCtx.fillStyle = '#a1a1aa';
+                nnCtx.font = '11px -apple-system';
+                nnCtx.textAlign = 'center';
+                nnCtx.fillText('Active topology only for Neural Network model in single view', nnCanvas.width / 2, nnCanvas.height / 2);
+                return;
+            }
+            
+            let layers = model.layers;
+            let nodeSize = 6;
+            let colWidth = nnCanvas.width / (layers.length + 1);
+            let layerPositions = [];
+            
+            for (let l = 0; l < layers.length; l++) {
+                let x = colWidth * (l + 1);
+                let numNodes = layers[l];
+                let layerXy = [];
+                let stepY = (nnCanvas.height - 30) / Math.max(1, numNodes - 1);
+                for (let n = 0; n < numNodes; n++) {
+                    let y = 15 + (numNodes === 1 ? (nnCanvas.height - 30) / 2 : n * stepY);
+                    layerXy.push({ x, y });
+                }
+                layerPositions.push(layerXy);
+            }
+            
+            // Weights connections
+            for (let l = 0; l < model.weights.length; l++) {
+                let w = model.weights[l];
+                let fromLayer = layerPositions[l];
+                let toLayer = layerPositions[l + 1];
+                
+                for (let r = 0; r < w.length; r++) {
+                    for (let c = 0; c < w[r].length; c++) {
+                        let val = w[r][c];
+                        let alpha = Math.min(1.0, Math.abs(val) * 0.7);
+                        nnCtx.strokeStyle = val > 0 ? `rgba(250, 250, 250, ${alpha * 0.35})` : `rgba(161, 161, 170, ${alpha * 0.25})`;
+                        nnCtx.lineWidth = Math.min(2, Math.abs(val) * 1.1);
+                        
+                        nnCtx.beginPath();
+                        nnCtx.moveTo(fromLayer[c].x, fromLayer[c].y);
+                        nnCtx.lineTo(toLayer[r].x, toLayer[r].y);
+                        nnCtx.stroke();
+                    }
+                }
+            }
+            
+            // Nodes
+            for (let l = 0; l < layerPositions.length; l++) {
+                for (let n = 0; n < layerPositions[l].length; n++) {
+                    let { x, y } = layerPositions[l][n];
+                    nnCtx.beginPath();
+                    nnCtx.arc(x, y, nodeSize, 0, Math.PI * 2);
+                    
+                    if (l === 0) {
+                        nnCtx.fillStyle = '#27272a';
+                        nnCtx.strokeStyle = '#3f3f46';
+                    } else if (l === layerPositions.length - 1) {
+                        nnCtx.fillStyle = '#fafafa';
+                        nnCtx.strokeStyle = '#ffffff';
+                    } else {
+                        nnCtx.fillStyle = '#52525b';
+                        nnCtx.strokeStyle = '#71717a';
+                    }
+                    nnCtx.lineWidth = 1;
+                    nnCtx.fill();
+                    nnCtx.stroke();
+                }
+            }
+        }
+
+        // --- INTERACTIVE DRAWING ON CANVAS ---
+        
+        let isMouseDown = false;
+
+        function addCanvasListeners(targetCanvas) {
+            targetCanvas.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                handleCanvasInteraction(e, targetCanvas);
+            });
+            targetCanvas.addEventListener('mousemove', (e) => {
+                if (isMouseDown) handleCanvasInteraction(e, targetCanvas);
+            });
+        }
+
+        addCanvasListeners(canvas);
+        addCanvasListeners(canvasCompareA);
+        addCanvasListeners(canvasCompareB);
+        addCanvasListeners(canvasCompareC);
+
+        window.addEventListener('mouseup', () => {
+            if (isMouseDown) {
+                isMouseDown = false;
+                // Generate Python code and CSV refresh
+                generatePythonCode();
+                exportCSVData();
+                triggerTrainInstant();
+            }
+        });
+
+        function handleCanvasInteraction(e, targetCanvas) {
+            let rect = targetCanvas.getBoundingClientRect();
+            let mouseX = e.clientX - rect.left;
+            let mouseY = e.clientY - rect.top;
+            
+            let cw = targetCanvas.width;
+            let ch = targetCanvas.height;
+            
+            // Map to normal coordinate space [-1.0, 1.0]
+            let nx = (mouseX - (cw / 2)) / (cw * 0.4);
+            let ny = -(mouseY - (ch / 2)) / (ch * 0.4);
+            
+            nx = Math.max(-1.0, Math.min(1.0, nx));
+            ny = Math.max(-1.0, Math.min(1.0, ny));
+
+            let targetValue = (activeTask === 'regression') ? paintY : selectedClass;
+
+            if (drawingTool === 'add') {
+                let tooClose = points.some(p => Math.hypot(p.x - nx, p.y - ny) < 0.04);
+                if (!tooClose) {
+                    let isTest = Math.random() > splitRatio;
+                    points.push({ x: nx, y: ny, label: targetValue, isTest });
+                    onDataModified();
+                }
+            } 
+            else if (drawingTool === 'brush') {
+                for (let i = 0; i < 2; i++) {
+                    let rx = nx + (Math.random() - 0.5) * 0.12;
+                    let ry = ny + (Math.random() - 0.5) * 0.12;
+                    rx = Math.max(-1.0, Math.min(1.0, rx));
+                    ry = Math.max(-1.0, Math.min(1.0, ry));
+                    
+                    let tooClose = points.some(p => Math.hypot(p.x - rx, p.y - ry) < 0.045);
+                    if (!tooClose) {
+                        let isTest = Math.random() > splitRatio;
+                        points.push({ x: rx, y: ry, label: targetValue, isTest });
+                    }
+                }
+                onDataModified();
+            } 
+            else if (drawingTool === 'erase') {
+                points = points.filter(p => Math.hypot(p.x - nx, p.y - ny) > 0.12);
+                onDataModified();
+            }
+        }
+
+        function onDataModified() {
+            document.getElementById('statPoints').innerText = points.length;
+            
+            // Retrain instant models immediately
+            if (viewMode === 'single') {
+                if (currentModelName === 'knn' || currentModelName === 'decision_tree' || currentModelName === 'svm' || activeTask === 'clustering') {
+                    model = trainInstant(model, currentModelName, activeTask);
+                    let metrics = evaluateModel(model, activeTask);
+                    updateStatsDisplay(1, 0, metrics.testVal);
+                }
+                drawDecisionBoundary(canvas, ctx, model, activeTask);
+            } else {
+                triggerTrainInstant();
+            }
+        }
+
+        // --- PRESET GENERATION ---
+
+        function generatePreset(type) {
+            points = [];
+            let isReg = (activeTask === 'regression');
+            
+            if (activeTask === 'clustering') {
+                // Clustering presets generate 3 Gaussian clusters
+                let centers = [{x: -0.4, y: 0.5}, {x: 0.5, y: 0.4}, {x: -0.1, y: -0.5}];
+                for (let c = 0; c < 3; c++) {
+                    for (let i = 0; i < 40; i++) {
+                        let nx = centers[c].x + (Math.random() - 0.5) * 0.35 + (Math.random() - 0.5) * (noiseLevel/100) * 0.4;
+                        let ny = centers[c].y + (Math.random() - 0.5) * 0.35 + (Math.random() - 0.5) * (noiseLevel/100) * 0.4;
+                        points.push({ x: nx, y: ny, label: 0, isTest: Math.random() > splitRatio });
+                    }
+                }
+            } 
+            else if (isReg) {
+                // Regression targets Y must be continuous value in [-1, 1]
+                let pointsCount = 120;
+                for (let i = 0; i < pointsCount; i++) {
+                    let nx = Math.random() * 2 - 1;
+                    let ny = Math.random() * 2 - 1;
+                    let yVal = 0;
+                    
+                    if (type === 'sine') {
+                        yVal = Math.sin(nx * Math.PI) * 0.7 + (Math.random() - 0.5) * (noiseLevel / 100);
+                    } else if (type === 'linear_trend') {
+                        yVal = nx * 0.7 + (Math.random() - 0.5) * (noiseLevel / 100);
+                    } else if (type === 'quadratic') {
+                        yVal = (1.0 - (nx * nx + ny * ny)) * 0.8 + (Math.random() - 0.5) * (noiseLevel / 100);
+                    } else { // clusters regression
+                        let centers = [{x: -0.5, y: 0.5, val: -0.8}, {x: 0.5, y: 0.4, val: 0.8}, {x: 0.0, y: -0.5, val: 0.0}];
+                        let c = Math.floor(Math.random() * 3);
+                        nx = centers[c].x + (Math.random() - 0.5) * 0.4;
+                        ny = centers[c].y + (Math.random() - 0.5) * 0.4;
+                        yVal = centers[c].val + (Math.random() - 0.5) * (noiseLevel / 150);
+                    }
+                    
+                    yVal = Math.max(-1.0, Math.min(1.0, yVal));
+                    points.push({ x: nx, y: ny, label: yVal, isTest: Math.random() > splitRatio });
+                }
+            } 
+            else {
+                // Classification presets
+                let classes = 3;
+                if (type === 'spiral') {
+                    let pPerClass = 45;
+                    for (let c = 0; c < classes; c++) {
+                        for (let i = 0; i < pPerClass; i++) {
+                            let r = (i / pPerClass) * 0.95;
+                            let theta = (i / pPerClass) * 6 + (c * 2 * Math.PI / classes);
+                            let nx = r * Math.sin(theta) + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                            let ny = r * Math.cos(theta) + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                            points.push({ x: nx, y: ny, label: c, isTest: Math.random() > splitRatio });
+                        }
+                    }
+                } else if (type === 'rings') {
+                    let radii = [0.3, 0.6, 0.9];
+                    for (let c = 0; c < classes; c++) {
+                        let r = radii[c];
+                        for (let i = 0; i < 50; i++) {
+                            let theta = (i / 50) * 2 * Math.PI;
+                            let nx = r * Math.cos(theta) + (Math.random() - 0.5) * (noiseLevel / 100) * 0.35;
+                            let ny = r * Math.sin(theta) + (Math.random() - 0.5) * (noiseLevel / 100) * 0.35;
+                            points.push({ x: nx, y: ny, label: c, isTest: Math.random() > splitRatio });
+                        }
+                    }
+                } else if (type === 'moons') {
+                    let pCount = 70;
+                    for (let i = 0; i < pCount; i++) {
+                        let theta = (i / pCount) * Math.PI;
+                        let nx = 0.5 * Math.cos(theta) - 0.2 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        let ny = 0.5 * Math.sin(theta) + 0.2 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        points.push({ x: nx, y: ny, label: 0, isTest: Math.random() > splitRatio });
+                    }
+                    for (let i = 0; i < pCount; i++) {
+                        let theta = (i / pCount) * Math.PI;
+                        let nx = 0.5 * Math.cos(-theta) + 0.2 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        let ny = 0.5 * Math.sin(-theta) - 0.2 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        points.push({ x: nx, y: ny, label: 1, isTest: Math.random() > splitRatio });
+                    }
+                    for (let i = 0; i < pCount; i++) {
+                        let theta = (i / pCount) * Math.PI;
+                        let nx = 0.4 * Math.cos(theta + Math.PI/2) + 0.1 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        let ny = 0.4 * Math.sin(theta + Math.PI/2) - 0.6 + (Math.random() - 0.5) * (noiseLevel / 100) * 0.4;
+                        points.push({ x: nx, y: ny, label: 2, isTest: Math.random() > splitRatio });
+                    }
+                } else { // clusters classification
+                    let centers = [{x:-0.4, y:0.5}, {x:0.5, y:0.4}, {x:-0.1, y:-0.5}];
+                    for (let c = 0; c < classes; c++) {
+                        for (let i = 0; i < 40; i++) {
+                            let nx = centers[c].x + (Math.random() - 0.5) * 0.35 + (Math.random() - 0.5) * (noiseLevel/100) * 0.4;
+                            let ny = centers[c].y + (Math.random() - 0.5) * 0.35 + (Math.random() - 0.5) * (noiseLevel/100) * 0.4;
+                            points.push({ x: nx, y: ny, label: c, isTest: Math.random() > splitRatio });
+                        }
+                    }
+                }
+            }
+
+            // Sync preset btn highlights
+            let presetGroup = (activeTask === 'regression') ? 'regDatasetsGroup' : (activeTask === 'clustering' ? 'clustDatasetsGroup' : 'classDatasetsGroup');
+            let btns = document.querySelectorAll(`#${presetGroup} .btn`);
+            btns.forEach(btn => {
+                if (btn.id.toLowerCase().includes(type.split('_')[0])) {
+                    btn.classList.add('btn-active');
+                } else {
+                    btn.classList.remove('btn-active');
+                }
+            });
+
+            onDataModified();
+            generatePythonCode();
+            exportCSVData();
+        }
+
+        // --- TASK TOGGLE ---
+        
+        function changeTask(taskName) {
+            activeTask = taskName;
+            stopTraining();
+            
+            // Update Header button styling
+            document.getElementById('taskClass').className = (taskName === 'classification') ? 'task-btn active' : 'task-btn';
+            document.getElementById('taskReg').className = (taskName === 'regression') ? 'task-btn active' : 'task-btn';
+            document.getElementById('taskClust').className = (taskName === 'clustering') ? 'task-btn active' : 'task-btn';
+            
+            // Adjust generator UI and inputs based on task
+            document.getElementById('classDatasetsGroup').style.display = (taskName === 'classification') ? 'block' : 'none';
+            document.getElementById('regDatasetsGroup').style.display = (taskName === 'regression') ? 'block' : 'none';
+            document.getElementById('clustDatasetsGroup').style.display = (taskName === 'clustering') ? 'block' : 'none';
+            
+            document.getElementById('classSelectorRow').style.display = (taskName === 'classification') ? 'grid' : 'none';
+            document.getElementById('regPaintRow').style.display = (taskName === 'regression') ? 'block' : 'none';
+            
+            // Adjust metrics UI labels
+            let labelTrainLoss = document.getElementById('lblTrainLoss');
+            let labelTestMetric = document.getElementById('lblTestMetric');
+            let confusionMatrixContainer = document.getElementById('confusionMatrixContainer');
+            let featureEngineeringCard = document.getElementById('featureEngineeringCard');
+            
+            if (taskName === 'regression') {
+                labelTrainLoss.innerText = "Train MSE";
+                labelTestMetric.innerText = "Test R²";
+                confusionMatrixContainer.style.display = 'none';
+                featureEngineeringCard.style.display = 'block';
+                document.getElementById('chartTitle').innerText = "Training Loss Curves (MSE)";
+                document.getElementById('optLogisticRegression').innerText = "Linear Ridge Regression";
+                document.getElementById('splitSliderGroup').style.display = 'block';
+            } 
+            else if (taskName === 'clustering') {
+                labelTrainLoss.innerText = "Train Inertia";
+                labelTestMetric.innerText = "Test Inertia";
+                confusionMatrixContainer.style.display = 'none';
+                featureEngineeringCard.style.display = 'none'; // Unsupervised clustering has no feature engineering mappings
+                document.getElementById('chartTitle').innerText = "Clustering Optimization (WCSS)";
+                document.getElementById('splitSliderGroup').style.display = 'none';
+            } 
+            else {
+                labelTrainLoss.innerText = "Train Loss";
+                labelTestMetric.innerText = "Test Acc";
+                confusionMatrixContainer.style.display = 'flex';
+                featureEngineeringCard.style.display = 'block';
+                document.getElementById('chartTitle').innerText = "Training & Validation Curves";
+                document.getElementById('optLogisticRegression').innerText = "Logistic Regression";
+                document.getElementById('splitSliderGroup').style.display = 'block';
+            }
+            
+            // Adjust configurations selectors based on clustering
+            if (taskName === 'clustering') {
+                document.getElementById('modelSelect').style.display = 'none';
+                document.getElementById('configKMeans').style.display = 'block';
+                document.getElementById('configNeuralNet').style.display = 'none';
+                document.getElementById('configSVM').style.display = 'none';
+                document.getElementById('configDecisionTree').style.display = 'none';
+                document.getElementById('configKNN').style.display = 'none';
+                document.getElementById('configLogReg').style.display = 'none';
+                document.getElementById('nnVisualizerCard').style.display = 'none';
+            } else {
+                document.getElementById('modelSelect').style.display = 'block';
+                document.getElementById('configKMeans').style.display = 'none';
+                onModelChange(currentModelName);
+            }
+            
+            // Clear and build default preset dataset
+            generatePreset(taskName === 'regression' ? 'sine' : (taskName === 'clustering' ? 'gaussian' : 'spiral'));
+            updateStatsDisplay(0, 0, 0);
+            
+            // CSV columns mapping reset Y selector conditional display
+            document.getElementById('targetColMapperWrapper').style.display = (taskName === 'clustering') ? 'none' : 'block';
+        }
+
+        // --- DYNAMIC VIEW TOGGLE (Single vs 3 Model Comparison) ---
+        
+        function switchView(mode) {
+            viewMode = mode;
+            stopTraining();
+            
+            document.getElementById('viewSingleBtn').className = (mode === 'single') ? 'view-btn active' : 'view-btn';
+            document.getElementById('viewCompareBtn').className = (mode === 'compare') ? 'view-btn active' : 'view-btn';
+            
+            document.getElementById('singleCanvasArea').style.display = (mode === 'single') ? 'flex' : 'none';
+            document.getElementById('compareCanvasArea').style.display = (mode === 'compare') ? 'grid' : 'none';
+            
+            document.getElementById('singleModelSidebar').style.display = (mode === 'single') ? 'flex' : 'none';
+            document.getElementById('appMainContainer').className = (mode === 'compare') ? 'app-container compare-mode' : 'app-container';
+            
+            onDataModified();
+        }
+
+        function onCompareModelChange(slot, value) {
+            stopTraining();
+            if (slot === 'A') modelSelectA = value;
+            if (slot === 'B') modelSelectB = value;
+            if (slot === 'C') modelSelectC = value;
+            triggerTrainInstant();
+        }
+
+        function updateCompareStatsUI(slot, epoch, loss, testVal) {
+            document.getElementById(`compEpoch${slot}`).innerText = epoch;
+            
+            // Adjust labels (Loss/MSE vs Acc/R2)
+            let lossLabel = document.getElementById(`compLossLabel${slot}`);
+            let accLabel = document.getElementById(`compAccLabel${slot}`);
+            
+            if (activeTask === 'regression') {
+                lossLabel.innerText = "MSE:";
+                accLabel.innerText = "R²:";
+                document.getElementById(`compLoss${slot}`).innerText = loss.toFixed(3);
+                document.getElementById(`compAcc${slot}`).innerText = testVal.toFixed(3);
+            } 
+            else if (activeTask === 'clustering') {
+                lossLabel.innerText = "Inertia:";
+                accLabel.innerText = "-";
+                document.getElementById(`compLoss${slot}`).innerText = Math.round(loss);
+                document.getElementById(`compAcc${slot}`).innerText = "-";
+            } 
+            else {
+                lossLabel.innerText = "Loss:";
+                accLabel.innerText = "Acc:";
+                document.getElementById(`compLoss${slot}`).innerText = loss.toFixed(3);
+                document.getElementById(`compAcc${slot}`).innerText = (testVal * 100).toFixed(1) + '%';
+            }
+        }
+
+        // --- CHART INTEGRATION ---
+        
+        function initCharts() {
+            const ctxChart = document.getElementById('metricsChart').getContext('2d');
+            metricsChart = new Chart(ctxChart, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Train Loss', data: [], borderColor: '#a78bfa', borderWidth: 1.5, fill: false, tension: 0.1, yAxisID: 'y' },
+                        { label: 'Test Loss', data: [], borderColor: '#f43f5e', borderWidth: 1.5, fill: false, tension: 0.1, yAxisID: 'y' },
+                        { label: 'Train Evaluation', data: [], borderColor: '#10b981', borderWidth: 1.5, fill: false, tension: 0.1, yAxisID: 'y1' },
+                        { label: 'Test Evaluation', data: [], borderColor: '#22d3ee', borderWidth: 2, fill: false, tension: 0.1, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#27272a' }, ticks: { color: '#a1a1aa', font: { family: 'system-ui' } } },
+                        y: { type: 'linear', display: true, position: 'left', grid: { color: '#27272a' }, ticks: { color: '#a1a1aa', font: { family: 'system-ui' } } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#a1a1aa', font: { family: 'system-ui' } } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#fafafa', font: { family: 'system-ui', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function resetChartHistories() {
+            if (!metricsChart) return;
+            metricsChart.data.labels = [];
+            metricsChart.data.datasets.forEach(d => d.data = []);
+            
+            // Adjust metrics scale limits for regression R2 vs classification Accuracy
+            if (activeTask === 'regression') {
+                metricsChart.data.datasets[2].label = "Train R²";
+                metricsChart.data.datasets[3].label = "Test R²";
+                metricsChart.options.scales.y1.min = -1;
+                metricsChart.options.scales.y1.max = 1;
+            } else if (activeTask === 'clustering') {
+                metricsChart.data.datasets[2].label = "Train Inertia";
+                metricsChart.data.datasets[3].label = "Test Inertia";
+                delete metricsChart.options.scales.y1.min;
+                delete metricsChart.options.scales.y1.max;
+            } else {
+                metricsChart.data.datasets[2].label = "Train Acc";
+                metricsChart.data.datasets[3].label = "Test Acc";
+                metricsChart.options.scales.y1.min = 0;
+                metricsChart.options.scales.y1.max = 1;
+            }
+            metricsChart.update();
+        }
+
+        // --- PARAMETERS SLIDERS AND INTERFACES ---
+
+        function updateNoise(val) {
+            noiseLevel = parseInt(val);
+            document.getElementById('noiseVal').innerText = val + '%';
+        }
+
+        function updateSplit(val) {
+            splitRatio = parseInt(val) / 100;
+            document.getElementById('splitVal').innerText = val + '/' + (100 - val);
+            
+            points.forEach(p => { p.isTest = Math.random() > splitRatio; });
+            onDataModified();
+        }
+
+        function setSelectedClass(c) {
+            selectedClass = c;
+            document.getElementById('classASelector').className = c === 0 ? "btn btn-class-a active" : "btn btn-class-a";
+            document.getElementById('classBSelector').className = c === 1 ? "btn btn-class-b active" : "btn btn-class-b";
+            document.getElementById('classCSelector').className = c === 2 ? "btn btn-class-c active" : "btn btn-class-c";
+        }
+
+        function updatePaintY(val) {
+            paintY = val / 100;
+            document.getElementById('paintYVal').innerText = paintY.toFixed(2);
+        }
+
+        function setDrawingTool(tool) {
+            drawingTool = tool;
+            document.getElementById('toolAdd').className = tool === 'add' ? 'active' : '';
+            document.getElementById('toolBrush').className = tool === 'brush' ? 'active' : '';
+            document.getElementById('toolErase').className = tool === 'erase' ? 'active' : '';
+        }
+
+        function clearCanvas() {
+            points = [];
+            onDataModified();
+            if (metricsChart) resetChartHistories();
+            generatePythonCode();
+            exportCSVData();
+        }
+
+        function updateHyperVal(id, val) {
+            document.getElementById(`val_${id}`).innerText = val;
+            onParameterTweak();
+        }
+
+        function onParameterTweak() {
+            stopTraining();
+            if (currentModelName === 'knn' || currentModelName === 'decision_tree' || currentModelName === 'svm' || activeTask === 'clustering') {
+                triggerTrainInstant();
+            } else {
+                initModel();
+                drawDecisionBoundary(canvas, ctx, model, activeTask);
+                drawNNTopology();
+            }
+            generatePythonCode();
+        }
+
+        function onModelChange(val) {
+            currentModelName = val;
+            stopTraining();
+            
+            // Toggle sidebar blocks
+            document.getElementById('configNeuralNet').style.display = val === 'neural_net' ? 'block' : 'none';
+            document.getElementById('configSVM').style.display = val === 'svm' ? 'block' : 'none';
+            document.getElementById('configDecisionTree').style.display = val === 'decision_tree' ? 'block' : 'none';
+            document.getElementById('configKNN').style.display = val === 'knn' ? 'block' : 'none';
+            document.getElementById('configLogReg').style.display = val === 'logistic_regression' ? 'block' : 'none';
+            
+            document.getElementById('nnVisualizerCard').style.display = (val === 'neural_net' && activeTask !== 'clustering') ? 'flex' : 'none';
+            
+            updateStatsDisplay(0, 0, 0);
+            
+            if (val === 'knn' || val === 'decision_tree' || val === 'svm') {
+                triggerTrainInstant();
+            } else {
+                initModel();
+                drawDecisionBoundary(canvas, ctx, model, activeTask);
+                drawNNTopology();
+            }
+            generatePythonCode();
+        }
+
+        function modifyHiddenLayers(delta) {
+            let nextCount = Math.max(1, Math.min(4, hiddenLayers.length + delta));
+            if (nextCount > hiddenLayers.length) hiddenLayers.push(4);
+            else if (nextCount < hiddenLayers.length) hiddenLayers.pop();
+            
+            document.getElementById('hiddenLayersCount').innerText = nextCount;
+            
+            let htmlStr = '';
+            for (let i = 0; i < nextCount; i++) {
+                let val = hiddenLayers[i] || 4;
+                htmlStr += `<input class="layer-node-count" id="layerNode_${i}" type="text" value="${val}" onchange="onLayerNodesChange(${i}, this.value)">`;
+            }
+            document.getElementById('hiddenLayersStructure').innerHTML = htmlStr;
+            onParameterTweak();
+        }
+
+        function onLayerNodesChange(idx, val) {
+            let num = parseInt(val) || 4;
+            num = Math.max(1, Math.min(12, num));
+            hiddenLayers[idx] = num;
+            document.getElementById(`layerNode_${idx}`).value = num;
+            onParameterTweak();
+        }
+
+        function toggleFeature(feat) {
+            if (feat === 'x1' || feat === 'x2') return;
+            selectedFeatures[feat] = !selectedFeatures[feat];
+            document.getElementById(`feat_${feat}`).checked = selectedFeatures[feat];
+            onParameterTweak();
+        }
+
+        function updateStatsDisplay(epoch, loss, testVal) {
+            document.getElementById('statEpoch').innerText = epoch;
+            
+            if (activeTask === 'regression') {
+                document.getElementById('statTrainLoss').innerText = loss.toFixed(3);
+                document.getElementById('statTestAcc').innerText = testVal.toFixed(3);
+            } 
+            else if (activeTask === 'clustering') {
+                document.getElementById('statTrainLoss').innerText = Math.round(loss);
+                document.getElementById('statTestAcc').innerText = Math.round(testVal);
+            } 
+            else {
+                document.getElementById('statTrainLoss').innerText = loss.toFixed(3);
+                document.getElementById('statTestAcc').innerText = (testVal * 100).toFixed(1) + '%';
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(cont => cont.classList.remove('active'));
+            
+            let activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function triggerPredictInput() {
+            let coordStr = prompt("Enter coordinates as 'x1, x2' (range -1.0 to 1.0):", "0.2, -0.4");
+            if (!coordStr) return;
+            let coords = coordStr.split(',').map(v => parseFloat(v));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                let px = Math.max(-1.0, Math.min(1.0, coords[0]));
+                let py = Math.max(-1.0, Math.min(1.0, coords[1]));
+                
+                if (model) {
+                    let feat = mapFeatures(px, py);
+                    let pred = model.predict(feat);
+                    if (activeTask === 'regression') {
+                        alert(`Regression prediction at (${px.toFixed(2)}, ${py.toFixed(2)}):\nOutput Y: ${pred.toFixed(4)}`);
+                    } else if (activeTask === 'clustering') {
+                        let clusterIdx = pred.indexOf(1);
+                        alert(`Clustering assignment at (${px.toFixed(2)}, ${py.toFixed(2)}):\nAssigned Cluster: ${clusterIdx}`);
+                    } else {
+                        let predClass = pred.indexOf(Math.max(...pred));
+                        let confidence = (pred[predClass] * 100).toFixed(1);
+                        let classNames = ["Class A (Violet)", "Class B (Cyan)", "Class C (Amber)"];
+                        alert(`Classification prediction at (${px.toFixed(2)}, ${py.toFixed(2)}):\nModel Output: ${classNames[predClass]}\nConfidence: ${confidence}%`);
+                    }
+                } else {
+                    alert("Please train the model first!");
+                }
+            } else {
+                alert("Invalid format!");
+            }
+        }
+
+        // --- LOCAL STORAGE SESSIONS ---
+
+        function loadSessionList() {
+            let sList = document.getElementById('sessionsList');
+            let raw = localStorage.getItem('AetherML_Sessions');
+            let sessions = raw ? JSON.parse(raw) : {};
+            
+            let keys = Object.keys(sessions);
+            if (keys.length === 0) {
+                sList.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">No saved sessions yet</div>';
+                return;
+            }
+            
+            sList.innerHTML = '';
+            for (let name of keys) {
+                let item = document.createElement('div');
+                item.className = 'session-item';
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <div class="session-actions">
+                        <button class="btn btn-active" onclick="restoreSession('${name}')" style="padding: 2px 6px; font-size: 0.65rem;">Load</button>
+                        <button class="btn" onclick="deleteSession('${name}')" style="padding: 2px 6px; font-size: 0.65rem; border-color: var(--accent-red); color: var(--accent-red);">Delete</button>
+                    </div>
+                `;
+                sList.appendChild(item);
+            }
+        }
+
+        function saveSession() {
+            let input = document.getElementById('sessionNameInput');
+            let name = input.value.trim();
+            if (!name) {
+                alert("Please enter a nickname!");
+                return;
+            }
+            
+            let raw = localStorage.getItem('AetherML_Sessions');
+            let sessions = raw ? JSON.parse(raw) : {};
+            
+            // Gather state properties
+            sessions[name] = {
+                points: points,
+                task: activeTask,
+                features: selectedFeatures,
+                modelName: currentModelName,
+                nnLayers: hiddenLayers
+            };
+            
+            localStorage.setItem('AetherML_Sessions', JSON.stringify(sessions));
+            input.value = '';
+            loadSessionList();
+            alert("Session saved successfully!");
+        }
+
+        function restoreSession(name) {
+            let raw = localStorage.getItem('AetherML_Sessions');
+            let sessions = raw ? JSON.parse(raw) : {};
+            let sess = sessions[name];
+            
+            if (sess) {
+                points = sess.points;
+                activeTask = sess.task;
+                selectedFeatures = sess.features;
+                currentModelName = sess.modelName;
+                hiddenLayers = sess.nnLayers;
+                
+                // Sync task selector UI
+                changeTask(activeTask);
+                
+                // Sync feature mapping checkboxes
+                for (let key in selectedFeatures) {
+                    let el = document.getElementById(`feat_${key}`);
+                    if (el) el.checked = selectedFeatures[key];
+                }
+                
+                // Sync model selector
+                document.getElementById('modelSelect').value = currentModelName;
+                onModelChange(currentModelName);
+                
+                onDataModified();
+                loadSessionList();
+                alert(`Restored session "${name}"!`);
+            }
+        }
+
+        function deleteSession(name) {
+            if (confirm(`Delete session "${name}"?`)) {
+                let raw = localStorage.getItem('AetherML_Sessions');
+                let sessions = raw ? JSON.parse(raw) : {};
+                delete sessions[name];
+                localStorage.setItem('AetherML_Sessions', JSON.stringify(sessions));
+                loadSessionList();
+            }
+        }
+
+        // --- CSV DRAG & DROP & COLUMNS MAPPING ---
+
+        const dropZone = document.getElementById('csvDropZone');
+        const fileInput = document.getElementById('csvFileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--text-main)';
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--border-color)';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border-color)';
+            if (e.dataTransfer.files.length > 0) {
+                handleCsvFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleCsvFile(e.target.files[0]);
+            }
+        });
+
+        function handleCsvFile(file) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let rawText = e.target.result;
+                let parsed = parseCSV(rawText);
+                if (parsed && parsed.headers.length >= 2) {
+                    parsedHeaders = parsed.headers;
+                    parsedRows = parsed.rows;
+                    
+                    // Show column mapping dropdowns
+                    populateMappingOptions();
+                    
+                    document.getElementById('csvFileName').innerText = file.name;
+                    document.getElementById('csvDropZone').style.display = 'none';
+                    document.getElementById('csvMetaInfo').style.display = 'flex';
+                    document.getElementById('columnMapper').style.display = 'grid';
+                } else {
+                    alert("Could not parse file. Ensure it contains at least 2 numerical columns!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(text) {
+            let lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return null;
+            let headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+            let rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                rows.push(lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, '')));
+            }
+            return { headers, rows };
+        }
+
+        function populateMappingOptions() {
+            let selectX1 = document.getElementById('selectColX1');
+            let selectX2 = document.getElementById('selectColX2');
+            let selectY = document.getElementById('selectColY');
+            
+            selectX1.innerHTML = '';
+            selectX2.innerHTML = '';
+            selectY.innerHTML = '';
+            
+            parsedHeaders.forEach((header, idx) => {
+                let opt1 = new Option(header, idx);
+                let opt2 = new Option(header, idx);
+                let opt3 = new Option(header, idx);
+                
+                selectX1.add(opt1);
+                selectX2.add(opt2);
+                selectY.add(opt3);
+            });
+            
+            // Set smart defaults
+            if (parsedHeaders.length >= 2) {
+                selectX2.value = 1;
+            }
+            if (parsedHeaders.length >= 3) {
+                selectY.value = 2;
+            }
+        }
+
+        function clearCsvUpload() {
+            parsedHeaders = [];
+            parsedRows = [];
+            
+            document.getElementById('csvDropZone').style.display = 'flex';
+            document.getElementById('csvMetaInfo').style.display = 'none';
+            document.getElementById('columnMapper').style.display = 'none';
+            fileInput.value = '';
+        }
+
+        function applyCsvMapping() {
+            let x1Idx = parseInt(document.getElementById('selectColX1').value);
+            let x2Idx = parseInt(document.getElementById('selectColX2').value);
+            let yIdx = parseInt(document.getElementById('selectColY').value);
+            
+            if (x1Idx === x2Idx) {
+                alert("X1 and X2 features must map to different columns!");
+                return;
+            }
+            
+            let loadedPoints = [];
+            
+            // Scalers boundary limits
+            let minX1 = Infinity, maxX1 = -Infinity;
+            let minX2 = Infinity, maxX2 = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            let uniqueLabels = new Set();
+            
+            // Pre-pass to find limits and unique classes
+            for (let row of parsedRows) {
+                if (row.length <= Math.max(x1Idx, x2Idx, yIdx)) continue;
+                
+                let v1 = parseFloat(row[x1Idx]);
+                let v2 = parseFloat(row[x2Idx]);
+                if (isNaN(v1) || isNaN(v2)) continue;
+                
+                if (v1 < minX1) minX1 = v1; if (v1 > maxX1) maxX1 = v1;
+                if (v2 < minX2) minX2 = v2; if (v2 > maxX2) maxX2 = v2;
+                
+                if (activeTask !== 'clustering') {
+                    if (activeTask === 'regression') {
+                        let vy = parseFloat(row[yIdx]);
+                        if (!isNaN(vy)) {
+                            if (vy < minY) minY = vy; if (vy > maxY) maxY = vy;
+                        }
+                    } else {
+                        uniqueLabels.add(row[yIdx].trim());
+                    }
+                }
+            }
+            
+            // Build classification mapping dictionary if classification
+            let classMapping = {};
+            if (activeTask === 'classification') {
+                let sortedList = Array.from(uniqueLabels).sort();
+                sortedList.forEach((lbl, idx) => {
+                    classMapping[lbl] = idx % 3; // wrap values to fits Class 0, 1, 2
+                });
+            }
+
+            // Map and Scale
+            for (let row of parsedRows) {
+                if (row.length <= Math.max(x1Idx, x2Idx, yIdx)) continue;
+                
+                let v1 = parseFloat(row[x1Idx]);
+                let v2 = parseFloat(row[x2Idx]);
+                if (isNaN(v1) || isNaN(v2)) continue;
+                
+                // Scale coordinates to fitting [-0.95, 0.95] canvas boundaries
+                let nx = maxX1 === minX1 ? 0 : -0.9 + 1.8 * ((v1 - minX1) / (maxX1 - minX1));
+                let ny = maxX2 === minX2 ? 0 : -0.9 + 1.8 * ((v2 - minX2) / (maxX2 - minX2));
+                
+                let targetY = 0;
+                if (activeTask === 'regression') {
+                    let vy = parseFloat(row[yIdx]);
+                    targetY = isNaN(vy) ? 0.0 : (maxY === minY ? 0.0 : -1.0 + 2.0 * ((vy - minY) / (maxY - minY)));
+                } else if (activeTask === 'classification') {
+                    let rawLbl = row[yIdx].trim();
+                    targetY = classMapping[rawLbl] !== undefined ? classMapping[rawLbl] : 0;
+                }
+                
+                loadedPoints.push({
+                    x: nx,
+                    y: ny,
+                    label: targetY,
+                    isTest: Math.random() > splitRatio
+                });
+            }
+            
+            if (loadedPoints.length > 0) {
+                points = loadedPoints;
+                onDataModified();
+                clearCsvUpload();
+                switchTab('tabCode'); // switch to editor tab
+                alert(`Successfully mapped and loaded ${points.length} points!`);
+            } else {
+                alert("Failed to map coordinates. Verify column datatype!");
+            }
+        }
+
+        function exportCSVData() {
+            let csvStr = "x1,x2,label\n";
+            for (let p of points) {
+                csvStr += `${p.x.toFixed(4)},${p.y.toFixed(4)},${p.label.toFixed(4)}\n`;
+            }
+            // Retained standard output text generator if they want to copy/paste
+        }
+
+        // --- PYTHON CODE GENERATOR ---
+
+        function generatePythonCode() {
+            let csvRows = [];
+            for (let p of points) {
+                csvRows.push(`    [${p.x.toFixed(4)}, ${p.y.toFixed(4)}, ${p.label.toFixed(4)}],`);
+            }
+            
+            let datasetArrayStr = csvRows.join('\n');
+            
+            // Build selected features columns stacks
+            let featList = [];
+            if (selectedFeatures.x1) featList.push("X[:, 0]");
+            if (selectedFeatures.x2) featList.push("X[:, 1]");
+            if (selectedFeatures.x1_sq) featList.push("X[:, 0]**2");
+            if (selectedFeatures.x2_sq) featList.push("X[:, 1]**2");
+            if (selectedFeatures.x1_x2) featList.push("X[:, 0] * X[:, 1]");
+            if (selectedFeatures.sin_x1) featList.push("np.sin(X[:, 0])");
+            if (selectedFeatures.sin_x2) featList.push("np.sin(X[:, 1])");
+            let featuresStr = featList.join(',\n        ');
+
+            let modelDef = '';
+            let modelImport = '';
+            let isReg = (activeTask === 'regression');
+            
+            if (activeTask === 'clustering') {
+                modelImport = "from sklearn.cluster import KMeans";
+                let k = parseInt(document.getElementById('clustK').value);
+                modelDef = `model = KMeans(
+    n_clusters=${k},
+    max_iter=300,
+    random_state=42
+)`;
+            } 
+            else if (currentModelName === 'neural_net') {
+                if (isReg) {
+                    modelImport = "from sklearn.neural_network import MLPRegressor";
+                    let act = document.getElementById('nnActivation').value;
+                    let lr = parseFloat(document.getElementById('nnLR').value);
+                    let l2 = parseFloat(document.getElementById('nnL2').value);
+                    let hiddenTuple = `(${hiddenLayers.join(', ')})`;
+                    if (hiddenLayers.length === 1) hiddenTuple = `(${hiddenLayers[0]},)`;
+                    modelDef = `model = MLPRegressor(
+    hidden_layer_sizes=${hiddenTuple},
+    activation='${act === 'sigmoid' ? 'logistic' : act}',
+    learning_rate_init=${lr},
+    alpha=${l2},
+    max_iter=500,
+    random_state=42
+)`;
+                } else {
+                    modelImport = "from sklearn.neural_network import MLPClassifier";
+                    let act = document.getElementById('nnActivation').value;
+                    let lr = parseFloat(document.getElementById('nnLR').value);
+                    let l2 = parseFloat(document.getElementById('nnL2').value);
+                    let hiddenTuple = `(${hiddenLayers.join(', ')})`;
+                    if (hiddenLayers.length === 1) hiddenTuple = `(${hiddenLayers[0]},)`;
+                    modelDef = `model = MLPClassifier(
+    hidden_layer_sizes=${hiddenTuple},
+    activation='${act === 'sigmoid' ? 'logistic' : act}',
+    learning_rate_init=${lr},
+    alpha=${l2},
+    max_iter=500,
+    random_state=42
+)`;
+                }
+            } 
+            else if (currentModelName === 'svm') {
+                let kernel = document.getElementById('svmKernel').value;
+                let C = parseFloat(document.getElementById('svmC').value);
+                let gamma = parseFloat(document.getElementById('svmGamma').value);
+                if (isReg) {
+                    modelImport = "from sklearn.kernel_ridge import KernelRidge";
+                    modelDef = `model = KernelRidge(
+    alpha=${1.0 / C},
+    kernel='${kernel}',
+    gamma=${kernel === 'rbf' ? gamma : 'None'}
+)`;
+                } else {
+                    modelImport = "from sklearn.svm import SVC";
+                    modelDef = `model = SVC(
+    kernel='${kernel}',
+    C=${C},
+    gamma=${kernel === 'rbf' ? gamma : "'scale'"},
+    probability=True,
+    random_state=42
+)`;
+                }
+            } 
+            else if (currentModelName === 'decision_tree') {
+                let maxD = parseInt(document.getElementById('dtMaxDepth').value);
+                let minS = parseInt(document.getElementById('dtMinSplit').value);
+                if (isReg) {
+                    modelImport = "from sklearn.tree import DecisionTreeRegressor";
+                    modelDef = `model = DecisionTreeRegressor(
+    max_depth=${maxD},
+    min_samples_split=${minS},
+    random_state=42
+)`;
+                } else {
+                    modelImport = "from sklearn.tree import DecisionTreeClassifier";
+                    modelDef = `model = DecisionTreeClassifier(
+    max_depth=${maxD},
+    min_samples_split=${minS},
+    random_state=42
+)`;
+                }
+            } 
+            else if (currentModelName === 'knn') {
+                let k = parseInt(document.getElementById('knnK').value);
+                if (isReg) {
+                    modelImport = "from sklearn.neighbors import KNeighborsRegressor";
+                    modelDef = `model = KNeighborsRegressor(
+    n_neighbors=${k}
+)`;
+                } else {
+                    modelImport = "from sklearn.neighbors import KNeighborsClassifier";
+                    modelDef = `model = KNeighborsClassifier(
+    n_neighbors=${k}
+)`;
+                }
+            } 
+            else if (currentModelName === 'logistic_regression') {
+                let l2 = parseFloat(document.getElementById('lrL2').value);
+                if (isReg) {
+                    modelImport = "from sklearn.linear_model import Ridge";
+                    modelDef = `model = Ridge(
+    alpha=${l2}
+)`;
+                } else {
+                    modelImport = "from sklearn.linear_model import LogisticRegression";
+                    modelDef = `model = LogisticRegression(
+    multi_class='multinomial',
+    C=${1.0 / l2},
+    solver='lbfgs',
+    max_iter=500,
+    random_state=42
+)`;
+                }
+            }
+
+            let pyScript = "";
+            
+            // Tailored Python pipeline generator for Classification / Regression / Clustering tasks
+            if (activeTask === 'clustering') {
+                pyScript = `import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+${modelImport}
+
+# 1. Load coordinates dataset
+dataset = np.array([
+${datasetArrayStr}
+])
+
+X = dataset[:, :2]
+
+# Scale features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 2. Fit K-Means
+${modelDef}
+
+print("Fitting clustering model...")
+labels = model.fit_predict(X_scaled)
+wcss = model.inertia_
+print(f"Within-Cluster Sum of Squares (Inertia): {wcss:.4f}")
+
+# 3. Plot cluster assignments and centroids
+def plot_clusters(X_raw, labels, model, scaler):
+    h = 0.02
+    x_min, x_max = X_raw[:, 0].min() - 0.2, X_raw[:, 0].max() + 0.2
+    y_min, y_max = X_raw[:, 1].min() - 0.2, X_raw[:, 1].max() + 0.2
+    
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    grid_points = np.c_[xx.ravel(), yy.ravel()]
+    grid_scaled = scaler.transform(grid_points)
+    
+    Z = model.predict(grid_scaled)
+    Z = Z.reshape(xx.shape)
+    
+    plt.figure(figsize=(8, 7))
+    plt.contourf(xx, yy, Z, alpha=0.2, cmap=plt.cm.viridis)
+    
+    # Plot cluster centers
+    centroids = scaler.inverse_transform(model.cluster_centers_)
+    plt.scatter(centroids[:, 0], centroids[:, 1], marker='D', s=100, color='black', edgecolors='white', label='Centroids')
+    
+    # Plot data points
+    plt.scatter(X_raw[:, 0], X_raw[:, 1], c=labels, edgecolors='k', s=40, cmap=plt.cm.viridis)
+    plt.xlabel('Feature X1')
+    plt.ylabel('Feature X2')
+    plt.title(f'K-Means Clusters (Inertia: {wcss:.2f})')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.legend()
+    plt.show()
+
+plot_clusters(X, labels, model, scaler)
+`;
+            } 
+            else if (activeTask === 'regression') {
+                pyScript = `import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score
+${modelImport}
+
+# 1. Load coordinates regression dataset
+dataset = np.array([
+${datasetArrayStr}
+])
+
+X = dataset[:, :2]
+y = dataset[:, 2] # continuous regression targets
+
+# 2. Train-Test Split (matching split ratio)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=${(1.0 - splitRatio).toFixed(2)}, random_state=42
+)
+
+# 3. Map features columns
+def map_engineered_features(X):
+    return np.column_stack([
+        ${featuresStr}
+    ])
+
+X_train_mapped = map_engineered_features(X_train)
+X_test_mapped = map_engineered_features(X_test)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_mapped)
+X_test_scaled = scaler.transform(X_test_mapped)
+
+# 4. Fit model
+${modelDef}
+
+print("Fitting regressor...")
+model.fit(X_train_scaled, y_train)
+
+# Evaluate
+y_pred = model.predict(X_test_scaled)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Test MSE: {mse:.4f}")
+print(f"Test R² Score: {r2:.4f}")
+
+# 5. Plot continuous prediction contours
+def plot_regression_surface(X_raw, y_raw, model, scaler):
+    h = 0.02
+    x_min, x_max = X_raw[:, 0].min() - 0.2, X_raw[:, 0].max() + 0.2
+    y_min, y_max = X_raw[:, 1].min() - 0.2, X_raw[:, 1].max() + 0.2
+    
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    grid_points = np.c_[xx.ravel(), yy.ravel()]
+    grid_mapped = map_engineered_features(grid_points)
+    grid_scaled = scaler.transform(grid_mapped)
+    
+    Z = model.predict(grid_scaled)
+    Z = Z.reshape(xx.shape)
+    
+    plt.figure(figsize=(8, 7))
+    plt.contourf(xx, yy, Z, 40, alpha=0.3, cmap=plt.cm.coolwarm)
+    
+    # Plot target values
+    scatter = plt.scatter(X_raw[:, 0], X_raw[:, 1], c=y_raw, edgecolors='k', s=45, cmap=plt.cm.coolwarm)
+    plt.xlabel('Feature X1')
+    plt.ylabel('Feature X2')
+    plt.title(f'Regression Surface (Test R²: {r2:.2f})')
+    plt.colorbar(scatter, label='Continuous Target Y')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.show()
+
+plot_regression_surface(X_test, y_test, model, scaler)
+`;
+            } 
+            else {
+                // Classification template
+                pyScript = `import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix
+${modelImport}
+
+# 1. Load dataset
+dataset = np.array([
+${datasetArrayStr}
+])
+
+X = dataset[:, :2]
+y = dataset[:, 2].astype(int)
+
+# 2. Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=${(1.0 - splitRatio).toFixed(2)}, random_state=42, stratify=y
+)
+
+# 3. Feature Mapping
+def map_engineered_features(X):
+    return np.column_stack([
+        ${featuresStr}
+    ])
+
+X_train_mapped = map_engineered_features(X_train)
+X_test_mapped = map_engineered_features(X_test)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_mapped)
+X_test_scaled = scaler.transform(X_test_mapped)
+
+# 4. Initialize and fit
+${modelDef}
+
+print("Fitting classifier...")
+model.fit(X_train_scaled, y_train)
+
+# Evaluate
+test_acc = model.score(X_test_scaled, y_test)
+print(f"Test Accuracy: {test_acc * 100:.2f}%")
+y_pred = model.predict(X_test_scaled)
+print("\\nClassification Report:")
+print(classification_report(y_test, y_pred, zero_division=0))
+
+# 5. Contour boundary mapping plot
+def plot_decision_boundary(X_raw, y_raw, model, scaler):
+    h = 0.02
+    x_min, x_max = X_raw[:, 0].min() - 0.2, X_raw[:, 0].max() + 0.2
+    y_min, y_max = X_raw[:, 1].min() - 0.2, X_raw[:, 1].max() + 0.2
+    
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    grid_points = np.c_[xx.ravel(), yy.ravel()]
+    grid_mapped = map_engineered_features(grid_points)
+    grid_scaled = scaler.transform(grid_mapped)
+    
+    Z = model.predict(grid_scaled)
+    Z = Z.reshape(xx.shape)
+    
+    plt.figure(figsize=(8, 7))
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.coolwarm)
+    
+    scatter = plt.scatter(X_raw[:, 0], X_raw[:, 1], c=y_raw, edgecolors='k', cmap=plt.cm.coolwarm)
+    plt.xlabel('Feature X1')
+    plt.ylabel('Feature X2')
+    plt.title(f'Decision Boundary (Test Accuracy: {test_acc * 100:.2f}%)')
+    plt.colorbar(scatter, ticks=[0, 1, 2], label='Class Labels')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.show()
+
+plot_decision_boundary(X_test, y_test, model, scaler)
+`;
+            }
+            
+            document.getElementById('pythonCode').innerText = points.length > 0 ? pyScript : "# Plot points or load data on canvas to generate Python code exporter...";
+        }
+
+        function copyCode() {
+            let codeText = document.getElementById('pythonCode').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                alert("Python project script copied to clipboard!");
+            }).catch(err => {
+                alert("Failed to copy code: " + err);
+            });
+        }
+
+        function downloadPythonScript() {
+            let codeText = document.getElementById('pythonCode').innerText;
+            if (points.length === 0) {
+                alert("Please add data points first!");
+                return;
+            }
+            let blob = new Blob([codeText], { type: "text/plain;charset=utf-8" });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = activeTask === 'clustering' ? "kmeans_project.py" : (activeTask === 'regression' ? "regression_project.py" : "classification_project.py");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- INIT ON LOAD ---
+        window.onload = () => {
+            initCharts();
+            generatePreset('spiral');
+            onModelChange('neural_net');
+            loadSessionList();
+        };
+    </script>
+</body>
+</html>
