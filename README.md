@@ -6,7 +6,7 @@ A beautiful, fully functional **browser-based ML sandbox** where you can draw da
 ![Rings Classification](screenshots/02-rings.png)
 ![Regression Mode](screenshots/03-regression.png)
 ![Clustering Mode](screenshots/04-clustering.png)
-![Output](screenshots/05-Output.png)
+![Output Example](screenshots/05-Output.png)
 
 ### ✨ Features
 - Interactive canvas (draw, brush, erase data points)
