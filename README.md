@@ -1,8 +1,12 @@
 # AetherML — Interactive Machine Learning Lab
 
-A beautiful, fully functional **browser-based ML sandbox** where you can draw data points, train multiple ML models live, see real-time decision boundaries, and export clean Python + scikit-learn code.
+A beautiful, fully functional **browser-based ML sandbox** where you can draw data points, train multiple ML models live, see real-time decision boundaries, and export clean Python + scikit-learn projects.
 
-![Demo](screenshots/demo-spiral.png)
+![Spiral Classification](screenshots/01-spiral.png)
+![Rings Classification](screenshots/02-rings.png)
+![Regression Mode](screenshots/03-regression.png)
+![Clustering Mode](screenshots/04-clustering.png)
+![Output](screenshots/05-Output.png)
 
 ### ✨ Features
 - Interactive canvas (draw, brush, erase data points)
@@ -18,4 +22,4 @@ A beautiful, fully functional **browser-based ML sandbox** where you can draw da
 ### How to Use
 Just open **`ml_data_mapper.html`** in any modern browser — **no installation needed**.
 
-Made by **KJV Rajesh**
+Made with ❤️ by KJV Rajesh
