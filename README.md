@@ -2,8 +2,6 @@
 
 A beautiful, fully functional **browser-based ML sandbox** where you can draw data points, train multiple ML models live, see real-time decision boundaries, and export clean Python + scikit-learn code.
 
-![Demo](screenshots/demo-spiral.png)
-
 ### ✨ Features
 - Interactive canvas (draw, brush, erase)
 - Classification, Regression & Clustering support
